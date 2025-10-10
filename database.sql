@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Insert default user (user1234 / mostech)
 -- Password: mostech
 INSERT INTO `users` (`username`, `password`) VALUES
-('user1234', '$2y$10$e0MYzXyjpJS8xrQCHJg3qOQRLX5XJG5qGJB5X5XJG5qGJB5XJG5qG.');
+('user1234', '$2y$12$PUTPynxAVyLJxonzsO/TWeGwdyahOve5kJrbdEaddI32p.ZXifESe');
 
 -- Table: configurations (untuk menyimpan semua konfigurasi)
 CREATE TABLE IF NOT EXISTS `configurations` (
