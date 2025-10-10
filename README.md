@@ -18,7 +18,8 @@ Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topol
 
 ## Daftar Isi
 
-- [Gambaran Umum](#gambaran-umum)
+- [Donate](#donate)
+- [Tentang Project Ini](#tentang-project-ini)
 - [Fitur](#fitur)
 - [Kebutuhan Sistem](#kebutuhan-sistem)
 - [Instalasi](#instalasi)
@@ -28,6 +29,12 @@ Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topol
 - [Kontribusi](#kontribusi)
 - [Dukungan](#dukungan)
 - [Lisensi](#lisensi)
+
+---
+
+## Donate
+
+Saya sangat berterima kasih atas tawaran donate dari teman-teman, mohon maaf bukan saya menolak rezeki. cukup doakan saja kebaikan kepada saya.
 
 ---
 
