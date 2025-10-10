@@ -1,61 +1,104 @@
-# GACS Dashboard .htaccess
+# GACS Dashboard - Performance Optimization
+# Enable Gzip Compression
 
-# Enable Rewrite Engine
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
+<IfModule mod_deflate.c>
+    # Compress HTML, CSS, JavaScript, Text, XML and fonts
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/x-font
+    AddOutputFilterByType DEFLATE application/x-font-opentype
+    AddOutputFilterByType DEFLATE application/x-font-otf
+    AddOutputFilterByType DEFLATE application/x-font-truetype
+    AddOutputFilterByType DEFLATE application/x-font-ttf
+    AddOutputFilterByType DEFLATE application/x-font-woff
+    AddOutputFilterByType DEFLATE application/x-font-woff2
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/x-web-app-manifest+json
+    AddOutputFilterByType DEFLATE font/opentype
+    AddOutputFilterByType DEFLATE font/otf
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE font/woff
+    AddOutputFilterByType DEFLATE font/woff2
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE image/x-icon
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
 
-    # Redirect to HTTPS (optional, uncomment if needed)
-    # RewriteCond %{HTTPS} off
-    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-    # Block access to sensitive files
-    RewriteRule ^config/.*$ - [F,L]
-    RewriteRule ^lib/.*$ - [F,L]
-    RewriteRule ^vendor/.*$ - [F,L]
-    RewriteRule ^\.git.*$ - [F,L]
-
-    # Allow direct access to API endpoints
-    RewriteCond %{REQUEST_URI} ^/api/
-    RewriteRule ^ - [L]
-
-    # Allow direct access to existing files and directories
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-
-    # Redirect all requests to index.php
-    RewriteRule ^(.*)$ index.php [QSA,L]
+    # Remove browser bugs (only needed for really old browsers)
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    Header append Vary User-Agent
 </IfModule>
 
-# Prevent directory listing
-Options -Indexes
+# Browser Caching
+<IfModule mod_expires.c>
+    ExpiresActive on
+    
+    # Images
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    
+    # CSS and JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    
+    # Fonts
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/x-font-woff "access plus 1 year"
+    ExpiresByType application/x-font-woff2 "access plus 1 year"
+    
+    # HTML
+    ExpiresByType text/html "access plus 1 hour"
+    
+    # API responses (shorter cache for dynamic content)
+    ExpiresByType application/json "access plus 5 minutes"
+</IfModule>
 
-# Set default charset
-AddDefaultCharset UTF-8
+# Add Cache-Control headers
+<IfModule mod_headers.c>
+    # Cache static assets
+    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+    
+    # Cache HTML for shorter time
+    <FilesMatch "\.(html|php)$">
+        Header set Cache-Control "public, max-age=3600"
+    </FilesMatch>
+    
+    # No cache for API responses (let PHP handle it)
+    <FilesMatch "api/.*\.php$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
 
 # Security Headers
 <IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
-    Header set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# PHP Settings
-<IfModule mod_php.c>
+# PHP Settings for Performance
+<IfModule mod_php7.c>
+    php_value max_execution_time 30
+    php_value memory_limit 128M
     php_value upload_max_filesize 10M
     php_value post_max_size 10M
-    php_value max_execution_time 300
-    php_value max_input_time 300
 </IfModule>
-
-# Block access to hidden files
-<FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
-
-# Block access to sensitive files
-<FilesMatch "(composer\.json|composer\.lock|database\.sql|\.env)$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>

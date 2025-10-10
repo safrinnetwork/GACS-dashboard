@@ -49,8 +49,6 @@ switch ($itemType) {
         $stmt->execute();
 
         // Recalculate all child ODC power when OLT power changes
-        $calculator = new PONCalculator();
-
         // Find all child ODCs
         $stmt = $conn->prepare("SELECT id FROM map_items WHERE parent_id = ? AND item_type = 'odc'");
         $stmt->bind_param("i", $itemId);
@@ -58,7 +56,8 @@ switch ($itemType) {
         $odcResult = $stmt->get_result();
 
         while ($odc = $odcResult->fetch_assoc()) {
-            $newOdcPower = $calculator->calculateODCPower($attenuationDb, $outputPower);
+            // Fix: Use correct parameters - attenuation not used, only OLT output power
+            $newOdcPower = PONCalculator::calculateODCPower(0, $outputPower);
 
             $updateStmt = $conn->prepare("UPDATE odc_config SET calculated_power = ?, parent_attenuation_db = ? WHERE map_item_id = ?");
             $updateStmt->bind_param("ddi", $newOdcPower, $attenuationDb, $odc['id']);

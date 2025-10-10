@@ -1673,9 +1673,9 @@ async function updateItemForm(type) {
                         <option value="1:8" selected>1:8 (10.5 dB)</option>
                         <option value="1:16">1:16 (14.0 dB)</option>
                         <option value="1:32">1:32 (17.5 dB)</option>
-                        <option value="20:80">20:80 (7.0 dB)</option>
-                        <option value="30:70">30:70 (5.2 dB)</option>
-                        <option value="50:50">50:50 (3.0 dB)</option>
+                        <option value="20:80">20:80 (16.8 dB)</option>
+                        <option value="30:70">30:70 (13.5 dB)</option>
+                        <option value="50:50">50:50 (10.0 dB)</option>
                     </select>
                 </div>
                 <div class="alert alert-info mt-2">

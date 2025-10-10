@@ -254,18 +254,15 @@ try {
 
                         // Calculate power from selected port (e.g., "80%" from 20:80 ratio)
                         if ($parentOdpPort && $parentRatio) {
-                            $calculator = new PONCalculator();
-                            $inputPower = $calculator->calculateCustomRatioPort($parentInputPower, $parentRatio, $parentOdpPort);
+                            $inputPower = PONCalculator::calculateCustomRatioPort($parentInputPower, $parentRatio, $parentOdpPort);
                         }
                     }
                 }
             }
 
-            $calculator = new PONCalculator();
-
             // Calculate power using standard method (works for both standard and custom ratios)
             // Custom ratio loss values already include internal distribution to ports
-            $calculatedPower = $calculator->calculateODPPower($inputPower, $useSplitter ? $splitterRatio : null);
+            $calculatedPower = PONCalculator::calculateODPPower($inputPower, $useSplitter ? $splitterRatio : null);
 
             // Store both input_power (before splitter) and calculated_power (after splitter)
             $stmt = $conn->prepare("INSERT INTO odp_config (map_item_id, port_count, odc_port, input_power, parent_odp_port, use_splitter, splitter_ratio, calculated_power) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");

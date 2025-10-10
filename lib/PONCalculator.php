@@ -37,8 +37,8 @@ class PONCalculator {
             '70' => 1.55,  // 10 × log10(1/0.70) ≈ 1.5 dB
         ],
         '50:50' => [
-            '50' => 3.01,  // 10 × log10(1/0.50) = 3.0 dB
-            '50' => 3.01,  // Same for both ports
+            '50_1' => 3.01,  // 10 × log10(1/0.50) = 3.0 dB (Port 1)
+            '50_2' => 3.01,  // Same for both ports (Port 2)
         ],
     ];
 
@@ -185,7 +185,7 @@ class PONCalculator {
      * Total typical loss: ~5.8dB (matches pemudanet.com)
      * Example: 9 dBm - 5.8 dB = 3.2 dBm
      */
-    public function calculateODCPower($parentAttenuation, $oltOutputPower = 2.0) {
+    public static function calculateODCPower($parentAttenuation, $oltOutputPower = 2.0) {
         // Fixed loss from OLT to ODC (based on pemudanet.com calculation)
         // This includes connector loss, fiber loss, and OLT-side splitter
         $fixedLoss = 5.8; // dB
@@ -203,7 +203,7 @@ class PONCalculator {
      * - Total loss from input to final output (already includes splitting to multiple ports)
      * - NOT just the ratio split, but ratio split + internal distribution
      */
-    public function calculateODPPower($parentPower, $splitterRatio = null) {
+    public static function calculateODPPower($parentPower, $splitterRatio = null) {
         $splitterLoss = 0;
 
         if ($splitterRatio) {
@@ -228,9 +228,14 @@ class PONCalculator {
      * @param string $selectedPort Selected port (e.g., "20%" or "80%")
      * @return float Calculated power for the selected port
      */
-    public function calculateCustomRatioPort($basePower, $ratio, $selectedPort) {
+    public static function calculateCustomRatioPort($basePower, $ratio, $selectedPort) {
         // Remove percentage sign from selected port if present
         $selectedPort = str_replace('%', '', $selectedPort);
+
+        // Handle special case for 50:50 ratio
+        if ($ratio === '50:50') {
+            $selectedPort = $selectedPort . '_1'; // Default to first port
+        }
 
         // Get port loss from lookup table
         if (isset(self::$customRatioPortLosses[$ratio][$selectedPort])) {
