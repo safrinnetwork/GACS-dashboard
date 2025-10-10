@@ -80,6 +80,13 @@ Import file `database.sql` ke database MySQL Anda:
 mysql -u nama_user_anda -p nama_database_anda < database.sql
 ```
 
+### Langka 4 : Install Composer
+```bash
+cd /home/namadomain.com/htdocs/namadomain.com
+composer install
+```
+> **Catatan:** Path cd /home/namadomain.com/htdocs/namadomain.com menyesuaikan dengan lokasi folder public website masing masing.
+
 Atau gunakan phpMyAdmin:
 1. Buka phpMyAdmin
 2. Pilih database Anda
