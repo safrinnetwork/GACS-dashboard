@@ -55,8 +55,9 @@ GACS Dashboard adalah alat monitoring jaringan dan visualisasi topologi yang dib
 Sebelum instalasi, pastikan Anda memiliki:
 
 - Web server (Apache/Nginx)
-- PHP 7.4 atau lebih tinggi
+- PHP 8+
 - MySQL 5.7 atau lebih tinggi
+- PHP Composer
 - Instance GenieACS (untuk integrasi data)
 
 ---
