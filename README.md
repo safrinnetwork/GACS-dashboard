@@ -41,12 +41,12 @@ GACS Dashboard adalah alat monitoring jaringan dan visualisasi topologi yang dib
 
 ## Fitur
 
-✅ Monitoring jaringan secara real-time
-✅ Visualisasi topologi interaktif
-✅ Antarmuka web yang user-friendly
-✅ Integrasi dengan GenieACS
-✅ Dashboard yang dapat dikustomisasi
-✅ Desain responsif
+- ✅ Monitoring jaringan secara real-time
+- ✅ Visualisasi topologi interaktif
+- ✅ Antarmuka web yang user-friendly
+- ✅ Integrasi dengan GenieACS
+- ✅ Dashboard yang dapat dikustomisasi
+- ✅ Desain responsif
 
 ---
 
