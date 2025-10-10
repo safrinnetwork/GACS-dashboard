@@ -1,4 +1,4 @@
-# GACS Dashboard
+# GACS Dashboard ( Beta )
 
 <div align="center">
 
@@ -31,7 +31,7 @@ Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topol
 
 ---
 
-## Gambaran Umum
+## Tentang Project ini
 
 GACS Dashboard adalah alat monitoring jaringan dan visualisasi topologi yang dibangun untuk GenieACS. Dashboard ini menyediakan antarmuka yang intuitif untuk memonitor dan mengelola infrastruktur jaringan Anda dengan visualisasi data secara real-time.
 
