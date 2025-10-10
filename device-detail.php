@@ -20,7 +20,7 @@ include __DIR__ . '/views/layouts/header.php';
 
 <?php if (!$genieacsConfigured): ?>
     <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i>
+        <i class="bi bi-exclamation-triangle"></i>
         GenieACS belum dikonfigurasi. Silakan konfigurasi terlebih dahulu di
         <a href="/configuration.php">halaman Configuration</a>.
     </div>
@@ -28,20 +28,20 @@ include __DIR__ . '/views/layouts/header.php';
     <!-- Back Button -->
     <div class="mb-3">
         <a href="/devices.php" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Devices
+            <i class="bi bi-arrow-left"></i> Back to Devices
         </a>
         <button class="btn btn-primary" onclick="summonDevice()">
-            <i class="fas fa-bolt"></i> Summon Device
+            <i class="bi bi-lightning-charge"></i> Summon Device
         </button>
         <button class="btn btn-info" onclick="loadDeviceDetail()">
-            <i class="fas fa-sync"></i> Refresh
+            <i class="bi bi-arrow-clockwise"></i> Refresh
         </button>
     </div>
 
     <!-- Device Detail Card -->
     <div class="card">
         <div class="card-header">
-            <i class="fas fa-hdd"></i> Device Details
+            <i class="bi bi-router"></i> Device Details
             <span id="device-id-badge" class="badge bg-secondary ms-2">Loading...</span>
         </div>
         <div class="card-body" id="device-detail-content">
@@ -58,22 +58,22 @@ include __DIR__ . '/views/layouts/header.php';
         <div class="modal-content">
             <div class="modal-header bg-warning text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-bolt"></i> Konfirmasi Summon Device
+                    <i class="bi bi-lightning-charge"></i> Konfirmasi Summon Device
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center py-4">
-                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
                 <h5 class="mt-3">Summon Device?</h5>
                 <p class="text-muted mb-0">Apakah Anda yakin ingin melakukan connection request ke device ini?</p>
                 <p class="text-muted mb-0"><small>Device ID: <strong id="summon-device-id"></strong></small></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i> Batal
+                    <i class="bi bi-x-lg"></i> Batal
                 </button>
                 <button type="button" class="btn btn-warning" onclick="confirmSummon()">
-                    <i class="fas fa-bolt"></i> Ya, Summon
+                    <i class="bi bi-lightning-charge"></i> Ya, Summon
                 </button>
             </div>
         </div>
@@ -98,7 +98,7 @@ async function loadDeviceDetail() {
         content.innerHTML = `
             <div class="row">
                 <div class="col-md-6">
-                    <h6><i class="fas fa-info-circle"></i> Basic Information</h6>
+                    <h6><i class="bi bi-info-circle"></i> Basic Information</h6>
                     <table class="table table-sm table-bordered">
                         <tr><th width="40%">Device ID:</th><td>${device.device_id}</td></tr>
                         <tr><th>Serial Number:</th><td>${device.serial_number}</td></tr>
@@ -111,14 +111,14 @@ async function loadDeviceDetail() {
                     </table>
                 </div>
                 <div class="col-md-6">
-                    <h6><i class="fas fa-microchip"></i> Hardware/Software</h6>
+                    <h6><i class="bi bi-cpu"></i> Hardware/Software</h6>
                     <table class="table table-sm table-bordered">
                         <tr><th width="40%">Hardware Version:</th><td>${device.hardware_version}</td></tr>
                         <tr><th>Software Version:</th><td>${device.software_version}</td></tr>
                         <tr><th>Uptime:</th><td>${formatUptime(device.uptime)}</td></tr>
                     </table>
 
-                    <h6 class="mt-4"><i class="fas fa-signal"></i> Optical Information</h6>
+                    <h6 class="mt-4"><i class="bi bi-broadcast"></i> Optical Information</h6>
                     <table class="table table-sm table-bordered">
                         <tr><th width="40%">Rx Power:</th><td>${device.rx_power} dBm</td></tr>
                         <tr><th>Temperature:</th><td>${device.temperature}°C</td></tr>
@@ -127,7 +127,7 @@ async function loadDeviceDetail() {
             </div>
             <div class="row mt-3">
                 <div class="col-md-12">
-                    <h6><i class="fas fa-network-wired"></i> Network Information</h6>
+                    <h6><i class="bi bi-ethernet"></i> Network Information</h6>
                     <table class="table table-sm table-bordered">
                         <tr>
                             <th width="20%">IP TR069:</th>
@@ -143,7 +143,7 @@ async function loadDeviceDetail() {
                                 <span id="wifi-pass-hidden">********</span>
                                 <span id="wifi-pass-shown" style="display:none;">${device.wifi_password}</span>
                                 <button class="btn btn-sm btn-link" onclick="togglePassword()">
-                                    <i id="toggle-icon" class="fas fa-eye"></i>
+                                    <i id="toggle-icon" class="bi bi-eye"></i>
                                 </button>
                             </td>
                         </tr>
@@ -174,11 +174,11 @@ function togglePassword() {
     if (hidden.style.display === 'none') {
         hidden.style.display = 'inline';
         shown.style.display = 'none';
-        icon.className = 'fas fa-eye';
+        icon.className = 'bi bi-eye';
     } else {
         hidden.style.display = 'none';
         shown.style.display = 'inline';
-        icon.className = 'fas fa-eye-slash';
+        icon.className = 'bi bi-eye-slash';
     }
 }
 

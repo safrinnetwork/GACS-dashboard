@@ -18,7 +18,7 @@ include __DIR__ . '/views/layouts/header.php';
 <div class="row">
     <div class="col-12">
         <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> Konfigurasi kredensial untuk terhubung ke berbagai layanan.
+            <i class="bi bi-info-circle"></i> Konfigurasi kredensial untuk terhubung ke berbagai layanan.
         </div>
     </div>
 </div>
@@ -28,7 +28,7 @@ include __DIR__ . '/views/layouts/header.php';
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-user-lock"></i> Ganti Kredensial Login
+                <i class="bi bi-person-lock"></i> Ganti Kredensial Login
             </div>
             <div class="card-body">
                 <form id="form-change-password">
@@ -50,7 +50,7 @@ include __DIR__ . '/views/layouts/header.php';
                         <input type="password" name="confirm_password" class="form-control">
                     </div>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Simpan Perubahan
+                        <i class="bi bi-save"></i> Simpan Perubahan
                     </button>
                 </form>
             </div>
@@ -63,7 +63,7 @@ include __DIR__ . '/views/layouts/header.php';
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-server"></i> Konfigurasi GenieACS
+                <i class="bi bi-hdd-network"></i> Konfigurasi GenieACS
                 <?php if ($genieacs && $genieacs['is_connected']): ?>
                     <span class="badge online float-end">Connected</span>
                 <?php endif; ?>
@@ -95,10 +95,10 @@ include __DIR__ . '/views/layouts/header.php';
                                placeholder="Password">
                     </div>
                     <button type="submit" class="btn btn-success me-2">
-                        <i class="fas fa-check"></i> Test Connection
+                        <i class="bi bi-check-circle"></i> Test Connection
                     </button>
                     <button type="button" class="btn btn-primary" onclick="saveGenieACS()">
-                        <i class="fas fa-save"></i> Simpan
+                        <i class="bi bi-save"></i> Simpan
                     </button>
                     <?php if ($genieacs && $genieacs['last_test']): ?>
                         <small class="text-muted d-block mt-2">
@@ -114,7 +114,7 @@ include __DIR__ . '/views/layouts/header.php';
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-network-wired"></i> Konfigurasi MikroTik
+                <i class="bi bi-ethernet"></i> Konfigurasi MikroTik
                 <?php if ($mikrotik && $mikrotik['is_connected']): ?>
                     <span class="badge online float-end">Connected</span>
                 <?php endif; ?>
@@ -146,10 +146,10 @@ include __DIR__ . '/views/layouts/header.php';
                                placeholder="Password" required>
                     </div>
                     <button type="submit" class="btn btn-success me-2">
-                        <i class="fas fa-check"></i> Test Connection
+                        <i class="bi bi-check-circle"></i> Test Connection
                     </button>
                     <button type="button" class="btn btn-primary" onclick="saveMikroTik()">
-                        <i class="fas fa-save"></i> Simpan
+                        <i class="bi bi-save"></i> Simpan
                     </button>
                     <?php if ($mikrotik && $mikrotik['last_test']): ?>
                         <small class="text-muted d-block mt-2">
@@ -189,10 +189,10 @@ include __DIR__ . '/views/layouts/header.php';
                         <small class="text-muted">Dapatkan dari @userinfobot</small>
                     </div>
                     <button type="submit" class="btn btn-success me-2">
-                        <i class="fas fa-check"></i> Test Connection
+                        <i class="bi bi-check-circle"></i> Test Connection
                     </button>
                     <button type="button" class="btn btn-primary" onclick="saveTelegram()">
-                        <i class="fas fa-save"></i> Simpan
+                        <i class="bi bi-save"></i> Simpan
                     </button>
                     <?php if ($telegram && $telegram['last_test']): ?>
                         <small class="text-muted d-block mt-2">

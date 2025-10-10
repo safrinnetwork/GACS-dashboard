@@ -13,7 +13,7 @@ include __DIR__ . '/views/layouts/header.php';
 
 <?php if (!$genieacsConfigured): ?>
     <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i>
+        <i class="bi bi-exclamation-triangle"></i>
         GenieACS belum dikonfigurasi. Silakan konfigurasi terlebih dahulu di
         <a href="/configuration.php">halaman Configuration</a>.
     </div>
@@ -26,7 +26,7 @@ include __DIR__ . '/views/layouts/header.php';
                 <p>Total Devices</p>
             </div>
             <div class="stat-icon">
-                <i class="fas fa-hdd"></i>
+                <i class="bi bi-router"></i>
             </div>
         </div>
 
@@ -36,7 +36,7 @@ include __DIR__ . '/views/layouts/header.php';
                 <p>Online</p>
             </div>
             <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
+                <i class="bi bi-check-circle"></i>
             </div>
         </div>
 
@@ -46,7 +46,7 @@ include __DIR__ . '/views/layouts/header.php';
                 <p>Offline</p>
             </div>
             <div class="stat-icon">
-                <i class="fas fa-times-circle"></i>
+                <i class="bi bi-x-circle"></i>
             </div>
         </div>
 
@@ -56,7 +56,7 @@ include __DIR__ . '/views/layouts/header.php';
                 <p>Avg Uptime</p>
             </div>
             <div class="stat-icon">
-                <i class="fas fa-clock"></i>
+                <i class="bi bi-clock-history"></i>
             </div>
         </div>
     </div>
@@ -66,9 +66,9 @@ include __DIR__ . '/views/layouts/header.php';
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-chart-bar"></i> Device Overview
+                    <i class="bi bi-bar-chart"></i> Device Overview
                     <button class="btn btn-sm btn-primary float-end" onclick="loadDashboardData()">
-                        <i class="fas fa-sync"></i> Refresh
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
                 <div class="card-body">
@@ -81,9 +81,9 @@ include __DIR__ . '/views/layouts/header.php';
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-signal"></i> Uplink Signal Strength
+                    <i class="bi bi-reception-4"></i> Uplink Signal Strength
                     <button class="btn btn-sm btn-primary float-end" onclick="loadUplinkData()">
-                        <i class="fas fa-sync"></i> Refresh
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
                 <div class="card-body">
@@ -100,7 +100,7 @@ include __DIR__ . '/views/layouts/header.php';
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-history"></i> Recent Device Activity
+                    <i class="bi bi-activity"></i> Recent Device Activity
                 </div>
                 <div class="card-body">
                     <div id="recent-devices">

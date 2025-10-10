@@ -22,6 +22,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
     min-height: 100vh;
+    zoom: 85%;
 }
 
 /* Sidebar Styles */
@@ -31,15 +32,16 @@ body {
     left: 0;
     height: 100vh;
     width: var(--sidebar-width);
-    background: linear-gradient(180deg, #1b4332 0%, #081c15 100%);
+    background: #275D45;
     color: white;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 1000;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-header {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -47,6 +49,8 @@ body {
 .sidebar-header h3 {
     margin: 0;
     font-weight: 600;
+    font-size: 1.1rem;
+    word-wrap: break-word;
 }
 
 .sidebar-menu {
@@ -61,7 +65,7 @@ body {
 .sidebar-menu a {
     display: flex;
     align-items: center;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1rem;
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all 0.3s;
@@ -72,11 +76,19 @@ body {
     background: rgba(255, 255, 255, 0.1);
     color: white;
     border-left: 3px solid white;
+    padding-left: calc(1rem - 3px);
 }
 
 .sidebar-menu i {
     margin-right: 0.75rem;
     font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.sidebar-menu span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Main Content Area */

@@ -12,7 +12,7 @@ include __DIR__ . '/views/layouts/header.php';
 
 <?php if (!$genieacsConfigured): ?>
     <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i>
+        <i class="bi bi-exclamation-triangle"></i>
         GenieACS belum dikonfigurasi. Silakan konfigurasi terlebih dahulu di
         <a href="/configuration.php">halaman Configuration</a>.
     </div>
@@ -22,32 +22,32 @@ include __DIR__ . '/views/layouts/header.php';
             <div class="card">
                 <div class="card-body">
                     <button class="btn btn-warning" id="toggle-pointer-btn" onclick="toggleLocationPointer()">
-                        <i class="fas fa-map-marker-alt"></i> <span id="pointer-btn-text">Show Location Pointer</span>
+                        <i class="bi bi-geo-alt"></i> <span id="pointer-btn-text">Show Location Pointer</span>
                     </button>
                     <button class="btn btn-primary" onclick="showAddItemModal()">
-                        <i class="fas fa-plus"></i> Add Item
+                        <i class="bi bi-plus-lg"></i> Add Item
                     </button>
                     <button class="btn btn-success" onclick="loadMap()">
-                        <i class="fas fa-sync"></i> Refresh
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                     <button class="btn btn-info" id="auto-refresh-toggle" onclick="toggleAutoRefresh()">
-                        <i class="fas fa-clock"></i> Auto-Refresh: <span id="auto-refresh-status">ON</span>
+                        <i class="bi bi-clock"></i> Auto-Refresh: <span id="auto-refresh-status">ON</span>
                     </button>
                     <div class="btn-group float-end">
                         <button class="btn btn-sm btn-outline-secondary" onclick="toggleLayer('server')">
-                            <i class="fas fa-server"></i> Server
+                            <i class="bi bi-server"></i> Server
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="toggleLayer('olt')">
-                            <i class="fas fa-broadcast-tower"></i> OLT
+                            <i class="bi bi-broadcast-pin"></i> OLT
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="toggleLayer('odc')">
-                            <i class="fas fa-box"></i> ODC
+                            <i class="bi bi-box"></i> ODC
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="toggleLayer('odp')">
-                            <i class="fas fa-cube"></i> ODP
+                            <i class="bi bi-cube"></i> ODP
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="toggleLayer('onu')">
-                            <i class="fas fa-wifi"></i> ONU
+                            <i class="bi bi-wifi"></i> ONU
                         </button>
                     </div>
                 </div>
@@ -98,7 +98,7 @@ include __DIR__ . '/views/layouts/header.php';
                         <small class="text-muted">Drag pointer di peta untuk mengubah lokasi</small>
                     </div>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
+                        <i class="bi bi-info-circle"></i>
                         <strong>Cara memilih lokasi:</strong>
                         <ul class="mb-0 mt-2">
                             <li><strong>Klik tombol "Show Location Pointer"</strong> di atas peta untuk menampilkan marker</li>
@@ -403,7 +403,7 @@ function initMap() {
     ]);
 
     // Add default layer
-    osm.addTo(map);
+    hybrid.addTo(map);
 
     // Layer control
     const baseLayers = {
@@ -621,10 +621,10 @@ function getItemPopupContent(item) {
         content += `
             <hr style="margin: 6px 0;">
             <button class="btn btn-sm btn-info w-100 mb-2" onclick="manageServerLinks(${item.id})">
-                <i class="fas fa-cog"></i> Manage Links
+                <i class="bi bi-gear"></i> Manage Links
             </button>
             <button class="btn btn-sm btn-secondary w-100" onclick="hideServerChain()">
-                <i class="fas fa-times"></i> Hide Chain
+                <i class="bi bi-x-lg"></i> Hide Chain
             </button>
         `;
     }
@@ -736,7 +736,7 @@ function getItemPopupContent(item) {
     // For ONU, show loading placeholder (will be filled when popup opens)
     if (item.item_type === 'onu' && item.genieacs_device_id) {
         content += `<hr style="margin: 8px 0;">`;
-        content += `<div id="onu-details-${item.id}"><small><i class="fas fa-spinner fa-spin"></i> Loading device info...</small></div>`;
+        content += `<div id="onu-details-${item.id}"><small><i class="bi bi-arrow-repeat"></i> Loading device info...</small></div>`;
     }
 
     // Add action buttons (escape name to prevent JavaScript errors)
@@ -745,10 +745,10 @@ function getItemPopupContent(item) {
         <hr style="margin: 8px 0;">
         <div class="btn-group btn-group-sm w-100">
             <button class="btn btn-sm btn-primary" onclick="editItem(${item.id})">
-                <i class="fas fa-edit"></i> Edit
+                <i class="bi bi-pencil"></i> Edit
             </button>
             <button class="btn btn-sm btn-danger" onclick="confirmDeleteItem(${item.id}, '${escapedName}')">
-                <i class="fas fa-trash"></i> Delete
+                <i class="bi bi-trash"></i> Delete
             </button>
         </div>
     `;
@@ -1323,7 +1323,7 @@ function setLocationPointer(latlng) {
                     border: 3px solid #fff;
                     animation: pointer-pulse 1.5s infinite;
                 ">
-                    <i class="fas fa-map-marker-alt" style="
+                    <i class="bi bi-geo-alt" style="
                         font-size: 20px;
                         color: white;
                         transform: rotate(45deg);
@@ -1492,14 +1492,14 @@ async function updateItemForm(type) {
                                 <small class="text-muted">Jumlah port di ODC</small>
                             </div>
                             <div class="alert alert-info">
-                                <small><i class="fas fa-info-circle"></i> ODC akan dibuat di lokasi yang sama dengan Server (1 titik koordinat). Power per port ODC akan otomatis dihitung dari PON Port yang dipilih.</small>
+                                <small><i class="bi bi-info-circle"></i> ODC akan dibuat di lokasi yang sama dengan Server (1 titik koordinat). Power per port ODC akan otomatis dihitung dari PON Port yang dipilih.</small>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="alert alert-info mt-2">
-                    <small><i class="fas fa-info-circle"></i> Server dapat memiliki child items: OLT dan ODC yang dapat dikonfigurasi setelah item dibuat atau bersamaan.</small>
+                    <small><i class="bi bi-info-circle"></i> Server dapat memiliki child items: OLT dan ODC yang dapat dikonfigurasi setelah item dibuat atau bersamaan.</small>
                 </div>
             `;
 
@@ -1575,7 +1575,7 @@ async function updateItemForm(type) {
             dynamicFields.innerHTML = `
                 ${!ponPortsResult || !ponPortsResult.ports || ponPortsResult.ports.length === 0 ? `
                     <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i> Belum ada Server PON tersedia. Buat Server terlebih dahulu.
+                        <i class="bi bi-exclamation-triangle"></i> Belum ada Server PON tersedia. Buat Server terlebih dahulu.
                     </div>
                 ` : ''}
                 <div class="form-group">
@@ -1631,7 +1631,7 @@ async function updateItemForm(type) {
             dynamicFields.innerHTML = `
                 ${noParentAvailable ? `
                     <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i> Belum ada ODC atau ODP dengan custom ratio tersedia. Silakan buat ODC atau ODP dengan ratio 20:80, 30:70, atau 50:50 terlebih dahulu.
+                        <i class="bi bi-exclamation-triangle"></i> Belum ada ODC atau ODP dengan custom ratio tersedia. Silakan buat ODC atau ODP dengan ratio 20:80, 30:70, atau 50:50 terlebih dahulu.
                     </div>
                 ` : ''}
                 <div class="form-group">
@@ -1679,7 +1679,7 @@ async function updateItemForm(type) {
                     </select>
                 </div>
                 <div class="alert alert-info mt-2">
-                    <small><i class="fas fa-calculator"></i> PON Calculator akan otomatis menghitung power setelah input.</small>
+                    <small><i class="bi bi-calculator"></i> PON Calculator akan otomatis menghitung power setelah input.</small>
                 </div>
             `;
             break;
@@ -1771,7 +1771,7 @@ async function handleODPParentChange(selectElement) {
                 const warningDiv = document.getElementById('odc-port-warning') || document.createElement('div');
                 warningDiv.id = 'odc-port-warning';
                 warningDiv.className = 'alert alert-warning mt-2';
-                warningDiv.innerHTML = `<small><i class="fas fa-exclamation-triangle"></i> <b>Port yang sudah digunakan:</b> ${result.used_ports.join(', ')}</small>`;
+                warningDiv.innerHTML = `<small><i class="bi bi-exclamation-triangle"></i> <b>Port yang sudah digunakan:</b> ${result.used_ports.join(', ')}</small>`;
 
                 if (!document.getElementById('odc-port-warning')) {
                     odcPortInput.parentElement.appendChild(warningDiv);
@@ -2023,7 +2023,7 @@ async function updateEditItemForm(item) {
                     <input type="text" name="customer_name" class="form-control" value="${item.customer_name || ''}" required>
                 </div>
                 <div class="alert alert-info">
-                    <small><i class="fas fa-info-circle"></i> GenieACS device dan ODP port tidak bisa diubah. Hapus dan buat ulang jika perlu mengubah.</small>
+                    <small><i class="bi bi-info-circle"></i> GenieACS device dan ODP port tidak bisa diubah. Hapus dan buat ulang jika perlu mengubah.</small>
                 </div>
             `;
             break;

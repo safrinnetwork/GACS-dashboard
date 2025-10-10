@@ -1,7 +1,7 @@
 <?php
 // General Configuration
 define('APP_NAME', 'GACS Dashboard');
-define('APP_URL', 'https://gacs.example.com');
+define('APP_URL', 'https://gacs-dev.mosana.id');
 define('ASSETS_URL', APP_URL . '/assets');
 
 // Session Configuration

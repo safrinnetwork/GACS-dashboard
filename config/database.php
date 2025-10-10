@@ -1,8 +1,8 @@
 <?php
 // Database Configuration
 define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_USER', 'gacs-dev');
+define('DB_PASS', 'pA1kl5U8G5Na6ABe99A7');
 define('DB_NAME', 'gacs-dev');
 
 // Create database connection

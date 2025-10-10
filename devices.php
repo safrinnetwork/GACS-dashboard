@@ -12,16 +12,16 @@ include __DIR__ . '/views/layouts/header.php';
 
 <?php if (!$genieacsConfigured): ?>
     <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i>
+        <i class="bi bi-exclamation-triangle"></i>
         GenieACS belum dikonfigurasi. Silakan konfigurasi terlebih dahulu di
         <a href="/configuration.php">halaman Configuration</a>.
     </div>
 <?php else: ?>
     <div class="card">
         <div class="card-header">
-            <i class="fas fa-hdd"></i> Device List
+            <i class="bi bi-router"></i> Device List
             <button class="btn btn-sm btn-primary float-end" onclick="loadDevices()">
-                <i class="fas fa-sync"></i> Refresh
+                <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
         </div>
         <div class="card-body">
@@ -58,22 +58,22 @@ include __DIR__ . '/views/layouts/header.php';
         <div class="modal-content">
             <div class="modal-header bg-warning text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-bolt"></i> Konfirmasi Summon Device
+                    <i class="bi bi-lightning-charge"></i> Konfirmasi Summon Device
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center py-4">
-                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
                 <h5 class="mt-3">Summon Device?</h5>
                 <p class="text-muted mb-0">Apakah Anda yakin ingin melakukan connection request ke device ini?</p>
                 <p class="text-muted mb-0"><small>Device ID: <strong id="summon-device-id"></strong></small></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i> Batal
+                    <i class="bi bi-x-lg"></i> Batal
                 </button>
                 <button type="button" class="btn btn-warning" onclick="confirmSummon()">
-                    <i class="fas fa-bolt"></i> Ya, Summon
+                    <i class="bi bi-lightning-charge"></i> Ya, Summon
                 </button>
             </div>
         </div>
@@ -110,7 +110,7 @@ async function loadDevices() {
                 <td><span class="badge ${device.status === 'Online' ? 'online' : 'offline'}">${device.status}</span></td>
                 <td>
                     <button class="btn btn-sm btn-primary" onclick="summonDeviceQuick('${device.device_id}')">
-                        <i class="fas fa-bolt"></i>
+                        <i class="bi bi-lightning-charge"></i>
                     </button>
                 </td>
             `;
