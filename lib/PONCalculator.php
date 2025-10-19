@@ -205,10 +205,16 @@ class PONCalculator {
      *
      * IMPORTANT: Always add insertion loss for ANY splitter configuration
      */
-    public function calculateODPPower($parentPower, $splitterRatio = null) {
+    public function calculateODPPower($parentPower, $splitterRatio = null, $customRatioOutputPort = null) {
         if (!$splitterRatio) {
             // No splitter - just pass through power
             return $parentPower;
+        }
+
+        // Check if this is a custom ratio splitter (20:80, 30:70, 50:50)
+        if (in_array($splitterRatio, ['20:80', '30:70', '50:50']) && $customRatioOutputPort) {
+            // Use the dedicated custom ratio method
+            return $this->calculateCustomRatioPort($parentPower, $splitterRatio, $customRatioOutputPort);
         }
 
         // Get split loss (WITHOUT insertion loss yet)
@@ -216,10 +222,6 @@ class PONCalculator {
         if (isset(self::$splitterLosses[$splitterRatio])) {
             // Standard splitter (1:2, 1:4, 1:8, etc.)
             $splitLoss = self::$splitterLosses[$splitterRatio];
-        } elseif (isset(self::$customRatioLosses[$splitterRatio])) {
-            // Custom ratio - this is wrong approach, should not be here
-            // Custom ratios should use calculateCustomRatioPort() instead
-            $splitLoss = self::$customRatioLosses[$splitterRatio];
         }
 
         // Add insertion loss (ALWAYS added for any splitter)

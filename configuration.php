@@ -23,8 +23,9 @@ include __DIR__ . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Change Login Credentials -->
+<!-- Row 1: Change Login Credentials & Telegram Bot -->
 <div class="row">
+    <!-- Change Login Credentials -->
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
@@ -56,10 +57,52 @@ include __DIR__ . '/views/layouts/header.php';
             </div>
         </div>
     </div>
+
+    <!-- Telegram Configuration -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fab fa-telegram"></i> Konfigurasi Telegram Bot
+                <?php if ($telegram && $telegram['is_connected']): ?>
+                    <span class="badge online float-end">Connected</span>
+                <?php endif; ?>
+            </div>
+            <div class="card-body">
+                <form id="form-telegram">
+                    <div class="form-group">
+                        <label>Bot Token</label>
+                        <input type="text" name="bot_token" class="form-control"
+                               value="<?php echo $telegram['bot_token'] ?? ''; ?>"
+                               placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" required>
+                        <small class="text-muted">Dapatkan dari @BotFather</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Chat ID</label>
+                        <input type="text" name="chat_id" class="form-control"
+                               value="<?php echo $telegram['chat_id'] ?? ''; ?>"
+                               placeholder="123456789" required>
+                        <small class="text-muted">Dapatkan dari @userinfobot</small>
+                    </div>
+                    <button type="submit" class="btn btn-success me-2">
+                        <i class="bi bi-check-circle"></i> Test Connection
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="saveTelegram()">
+                        <i class="bi bi-save"></i> Simpan
+                    </button>
+                    <?php if ($telegram && $telegram['last_test']): ?>
+                        <small class="text-muted d-block mt-2">
+                            Last test: <?php echo timeAgo($telegram['last_test']); ?>
+                        </small>
+                    <?php endif; ?>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- GenieACS Configuration -->
+<!-- Row 2: GenieACS & MikroTik Configuration -->
 <div class="row mt-4">
+    <!-- GenieACS Configuration -->
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
@@ -154,49 +197,6 @@ include __DIR__ . '/views/layouts/header.php';
                     <?php if ($mikrotik && $mikrotik['last_test']): ?>
                         <small class="text-muted d-block mt-2">
                             Last test: <?php echo timeAgo($mikrotik['last_test']); ?>
-                        </small>
-                    <?php endif; ?>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Telegram Configuration -->
-<div class="row mt-4">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <i class="fab fa-telegram"></i> Konfigurasi Telegram Bot
-                <?php if ($telegram && $telegram['is_connected']): ?>
-                    <span class="badge online float-end">Connected</span>
-                <?php endif; ?>
-            </div>
-            <div class="card-body">
-                <form id="form-telegram">
-                    <div class="form-group">
-                        <label>Bot Token</label>
-                        <input type="text" name="bot_token" class="form-control"
-                               value="<?php echo $telegram['bot_token'] ?? ''; ?>"
-                               placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" required>
-                        <small class="text-muted">Dapatkan dari @BotFather</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Chat ID</label>
-                        <input type="text" name="chat_id" class="form-control"
-                               value="<?php echo $telegram['chat_id'] ?? ''; ?>"
-                               placeholder="123456789" required>
-                        <small class="text-muted">Dapatkan dari @userinfobot</small>
-                    </div>
-                    <button type="submit" class="btn btn-success me-2">
-                        <i class="bi bi-check-circle"></i> Test Connection
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="saveTelegram()">
-                        <i class="bi bi-save"></i> Simpan
-                    </button>
-                    <?php if ($telegram && $telegram['last_test']): ?>
-                        <small class="text-muted d-block mt-2">
-                            Last test: <?php echo timeAgo($telegram['last_test']); ?>
                         </small>
                     <?php endif; ?>
                 </form>

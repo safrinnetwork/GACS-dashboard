@@ -56,7 +56,17 @@ async function fetchAPI(url, options = {}) {
             return null;
         }
     } catch (error) {
+        // Check if error is due to abort (user navigated away)
+        if (error.name === 'AbortError') {
+            // Silently ignore abort errors (normal behavior when navigating)
+            console.debug('Request aborted for', url);
+            return null;
+        }
+
+        // Log other fetch errors
         console.error('Fetch error for', url, ':', error);
+
+        // Only show toast for non-abort errors
         showToast('Terjadi kesalahan koneksi: ' + error.message, 'danger');
         return null;
     }

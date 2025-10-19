@@ -406,9 +406,14 @@ async function loadRecentDevices() {
                     rxDisplay = `<span class="badge ${rxBadgeClass}">N/A</span>`;
                 }
 
-                const statusBadge = device.status === 'online'
-                    ? '<span class="badge online">Online</span>'
-                    : '<span class="badge offline">Offline</span>';
+                // Status badge with ping
+                let statusBadge;
+                if (device.status === 'online') {
+                    const ping = device.ping || '-';
+                    statusBadge = `<span class="badge online">ON [${ping}ms]</span>`;
+                } else {
+                    statusBadge = `<span class="badge offline">OFF [-]</span>`;
+                }
 
                 // Map button - conditional based on registration status
                 let mapButton;

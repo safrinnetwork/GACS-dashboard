@@ -37,7 +37,11 @@
                 },
                 body: JSON.stringify(logData)
             }).catch(err => {
-                // Silently fail - don't spam console with logging errors
+                // Ignore abort errors (normal when navigating away)
+                if (err.name === 'AbortError') {
+                    return;
+                }
+                // Silently fail for other errors - don't spam console
                 originalConsole.error.call(console, 'Failed to send log to server:', err);
             });
         });

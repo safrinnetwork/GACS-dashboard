@@ -288,6 +288,7 @@ try {
             // Port Count directly determines secondary splitter ratio
             $useSecondarySplitter = 1; // Always use secondary splitter
             $secondarySplitterRatio = "1:{$portCount}"; // e.g., Port Count 8 = 1:8, Port Count 32 = 1:32
+            $customSecondaryRatioOutputPort = $data['custom_secondary_ratio_output_port'] ?? null;
 
             // Determine parent type (ODC or ODP)
             $inputPower = 0; // Power before splitter (untuk cascading)
@@ -384,8 +385,8 @@ try {
             }
 
             // Store both input_power (before splitter) and calculated_power (after all splitters)
-            $stmt = $conn->prepare("INSERT INTO odp_config (map_item_id, port_count, odc_port, input_power, parent_odp_port, use_splitter, splitter_ratio, custom_ratio_output_port, use_secondary_splitter, secondary_splitter_ratio, calculated_power) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iiidsissisd", $itemId, $portCount, $odcPort, $inputPower, $parentOdpPort, $useSplitter, $splitterRatio, $customRatioOutputPort, $useSecondarySplitter, $secondarySplitterRatio, $calculatedPower);
+            $stmt = $conn->prepare("INSERT INTO odp_config (map_item_id, port_count, odc_port, input_power, parent_odp_port, use_splitter, splitter_ratio, custom_ratio_output_port, use_secondary_splitter, secondary_splitter_ratio, custom_secondary_ratio_output_port, calculated_power) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iiidsississd", $itemId, $portCount, $odcPort, $inputPower, $parentOdpPort, $useSplitter, $splitterRatio, $customRatioOutputPort, $useSecondarySplitter, $secondarySplitterRatio, $customSecondaryRatioOutputPort, $calculatedPower);
             $stmt->execute();
             break;
 

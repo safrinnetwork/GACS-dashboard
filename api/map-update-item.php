@@ -77,11 +77,39 @@ switch ($itemType) {
     case 'odp':
         $portCount = $data['port_count'] ?? 8;
         $odcPort = $data['odc_port'] ?? null;
+        $parentOdpPort = $data['parent_odp_port'] ?? null;
         $useSplitter = $data['use_splitter'] ?? 0;
         $splitterRatio = $data['splitter_ratio'] ?? '1:8';
+        $customRatioOutputPort = $data['custom_ratio_output_port'] ?? null;
+        $useSecondarySplitter = $data['use_secondary_splitter'] ?? 0;
+        $secondarySplitterRatio = $data['secondary_splitter_ratio'] ?? null;
+        $customSecondaryRatioOutputPort = $data['custom_secondary_ratio_output_port'] ?? null;
 
-        $stmt = $conn->prepare("UPDATE odp_config SET port_count = ?, odc_port = ?, use_splitter = ?, splitter_ratio = ? WHERE map_item_id = ?");
-        $stmt->bind_param("iiisi", $portCount, $odcPort, $useSplitter, $splitterRatio, $itemId);
+        // Recalculate power based on updated splitter configuration
+        $calculator = new PONCalculator();
+
+        // Get current input_power from database
+        $stmt = $conn->prepare("SELECT input_power FROM odp_config WHERE map_item_id = ?");
+        $stmt->bind_param("i", $itemId);
+        $stmt->execute();
+        $odpResult = $stmt->get_result();
+        $odpConfig = $odpResult->fetch_assoc();
+        $inputPower = $odpConfig['input_power'] ?? 0;
+
+        // Calculate power after primary splitter
+        $powerAfterPrimarySplitter = $inputPower;
+        if ($useSplitter && $splitterRatio) {
+            $powerAfterPrimarySplitter = $calculator->calculateODPPower($inputPower, $splitterRatio, $customRatioOutputPort);
+        }
+
+        // Calculate power after secondary splitter (if used)
+        $calculatedPower = $powerAfterPrimarySplitter;
+        if ($useSecondarySplitter && $secondarySplitterRatio) {
+            $calculatedPower = $calculator->calculateODPPower($powerAfterPrimarySplitter, $secondarySplitterRatio, $customSecondaryRatioOutputPort);
+        }
+
+        $stmt = $conn->prepare("UPDATE odp_config SET port_count = ?, odc_port = ?, parent_odp_port = ?, use_splitter = ?, splitter_ratio = ?, custom_ratio_output_port = ?, use_secondary_splitter = ?, secondary_splitter_ratio = ?, custom_secondary_ratio_output_port = ?, calculated_power = ? WHERE map_item_id = ?");
+        $stmt->bind_param("iisississsdi", $portCount, $odcPort, $parentOdpPort, $useSplitter, $splitterRatio, $customRatioOutputPort, $useSecondarySplitter, $secondarySplitterRatio, $customSecondaryRatioOutputPort, $calculatedPower, $itemId);
         $stmt->execute();
         break;
 

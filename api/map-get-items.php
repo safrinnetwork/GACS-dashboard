@@ -226,7 +226,7 @@ function calculateServerStatus($item, $netwatchStatus) {
     $properties = $item['properties'] ?? [];
 
     $ispLink = $properties['isp_link'] ?? '';
-    $mikrotikLink = $properties['mikrotik_link'] ?? '';
+    $mikrotikLink = $properties['mikrotik_device_id'] ?? ''; // Fixed: use mikrotik_device_id instead of mikrotik_link
     $oltLink = $properties['olt_link'] ?? '';
 
     // If ISP link is set and online, server is online

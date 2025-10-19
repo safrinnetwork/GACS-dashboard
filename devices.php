@@ -213,6 +213,9 @@ let currentPage = 1;
 let itemsPerPage = 20; // Default: 20 items per page
 let totalDevices = 0;
 
+// Auto-refresh timer ID for cleanup
+let autoRefreshTimer = null;
+
 async function loadDevices(isAutoRefresh = false) {
     // Save scroll position before refresh (for auto-refresh)
     if (isAutoRefresh) {
@@ -450,6 +453,15 @@ async function renderDevices(devices) {
             </button>`;
         }
 
+        // Status badge with ping
+        let statusDisplay;
+        if (device.status === 'online') {
+            const ping = device.ping || '-';
+            statusDisplay = `<span class="badge online">ON [${ping}ms]</span>`;
+        } else {
+            statusDisplay = `<span class="badge offline">OFF [-]</span>`;
+        }
+
         row.innerHTML = `
             <td><a href="/device-detail.php?id=${encodeURIComponent(device.device_id)}">${device.serial_number}</a></td>
             <td>${device.mac_address}</td>
@@ -460,7 +472,7 @@ async function renderDevices(devices) {
             <td data-sort-value="${parseFloat(device.rx_power) || -999}">${rxDisplay}</td>
             <td data-sort-value="${parseFloat(device.temperature) || -999}">${device.temperature}°C</td>
             <td data-sort-value="${clientsCount}" class="text-center">${clientsBadge}</td>
-            <td data-sort-value="${device.status}"><span class="badge ${device.status === 'online' ? 'online' : 'offline'}">${device.status.charAt(0).toUpperCase() + device.status.slice(1)}</span></td>
+            <td data-sort-value="${device.status}">${statusDisplay}</td>
             <td>
                 ${mapButton}
                 <button class="btn btn-sm btn-primary" onclick="summonDeviceQuick('${device.device_id}')" title="Summon Device">
@@ -1075,7 +1087,9 @@ function changeItemsPerPage() {
 document.addEventListener('DOMContentLoaded', function() {
     <?php if ($genieacsConfigured): ?>
         loadDevices(); // Initial load (manual)
-        setInterval(() => loadDevices(true), 60000); // Auto-refresh every 60 seconds
+
+        // Start auto-refresh timer
+        autoRefreshTimer = setInterval(() => loadDevices(true), 60000); // Auto-refresh every 60 seconds
     <?php endif; ?>
 
     // Keyboard shortcuts for pagination (Left/Right arrow keys)
@@ -1093,6 +1107,32 @@ document.addEventListener('DOMContentLoaded', function() {
             goToPage(currentPage + 1);
         }
     });
+});
+
+// Cleanup: Stop auto-refresh when user navigates away
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+});
+
+// Also cleanup on page visibility change (when tab becomes hidden)
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Page is hidden, stop auto-refresh to save resources
+        if (autoRefreshTimer) {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+        }
+    } else {
+        // Page is visible again, restart auto-refresh
+        <?php if ($genieacsConfigured): ?>
+        if (!autoRefreshTimer) {
+            autoRefreshTimer = setInterval(() => loadDevices(true), 60000);
+        }
+        <?php endif; ?>
+    }
 });
 </script>
 
