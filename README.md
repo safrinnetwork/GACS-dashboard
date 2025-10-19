@@ -1,4 +1,4 @@
-# GACS Dashboard v1.0.0-beta
+# GACS Dashboard v1.1.0-beta
 
 <div align="center">
 
@@ -569,26 +569,6 @@ gacs-dashboard/
 
 ---
 
-## 🔄 Version History
-
-### v1.0.0-beta (Current - October 2025)
-
-- ✅ Initial beta release
-- ✅ Core dashboard functionality
-- ✅ Interactive network topology map dengan editable polylines
-- ✅ GenieACS, MikroTik, Telegram integrations
-- ✅ PON power calculator
-- ✅ Multi-user Telegram bot dengan RBAC (11 permissions)
-- ✅ WiFi edit via Telegram dengan multi-step wizard
-- ✅ GPS location sharing & map integration
-- ✅ Scheduled reports (daily/weekly)
-- ✅ Device monitoring & notifications
-- ✅ Automated backup & webhook monitoring
-- ✅ Database consolidation (25 tables + 1 view)
-- ✅ Universal deployment package
-- ✅ Production-ready security hardening
-
----
 
 ## 🤝 Contributing
 
