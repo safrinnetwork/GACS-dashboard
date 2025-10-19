@@ -52,7 +52,12 @@ while ($row = $result->fetch_assoc()) {
             $row['config'] = $configResult->fetch_assoc();
             break;
         case 'odc':
-            $stmt = $conn->prepare("SELECT * FROM odc_config WHERE map_item_id = ?");
+            $stmt = $conn->prepare("
+                SELECT oc.*, COALESCE(oc.server_id, pp.map_item_id) as server_id
+                FROM odc_config oc
+                LEFT JOIN server_pon_ports pp ON pp.id = oc.olt_pon_port_id
+                WHERE oc.map_item_id = ?
+            ");
             $stmt->bind_param("i", $row['id']);
             $stmt->execute();
             $configResult = $stmt->get_result();
@@ -143,9 +148,38 @@ function calculateItemStatus($item, $allItems, $netwatchStatus) {
             return calculateOLTStatus($item, $allItems, $netwatchStatus);
 
         case 'odc':
+            // ODC status depends on parent (for child ODC) or Server (for standalone ODC)
+            if (!empty($item['parent_id'])) {
+                // Child ODC - check parent status
+                $parentStatus = getParentStatus($item, $allItems);
+                if ($parentStatus === 'online') {
+                    return 'online';
+                }
+                return $parentStatus;
+            } else {
+                // Standalone ODC - check server status via server_pon_port
+                if (isset($item['config']['server_pon_port'])) {
+                    // Find server that has this PON port
+                    // Since we don't store server_id, we check all servers
+                    foreach ($allItems as $serverItem) {
+                        if ($serverItem['item_type'] === 'server') {
+                            // Check if server is online
+                            $serverStatus = calculateServerStatus($serverItem, $netwatchStatus);
+                            if ($serverStatus === 'online') {
+                                return 'online';
+                            } elseif ($serverStatus === 'offline') {
+                                return 'offline';
+                            }
+                            // If first server found, break (ODC connected to this server)
+                            break;
+                        }
+                    }
+                }
+            }
+            return 'unknown';
+
         case 'odp':
-            // ODC/ODP status depends on parent
-            // If parent is online, ODC/ODP is also online
+            // ODP status depends on parent
             $parentStatus = getParentStatus($item, $allItems);
             if ($parentStatus === 'online') {
                 return 'online';

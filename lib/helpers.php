@@ -110,3 +110,83 @@ function generateCSRFToken() {
 function verifyCSRFToken($token) {
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
+
+/**
+ * Lookup MAC address vendor from macvendors.com API
+ * Implements caching to reduce API calls (max 1 request/second, 1000/day)
+ *
+ * @param string $macAddress MAC address in any format
+ * @return string Vendor name or original hostname/Unknown Device
+ */
+function getMACVendor($macAddress, $fallbackName = 'Unknown Device') {
+    // Validate MAC address format
+    if (empty($macAddress) || $macAddress === 'N/A') {
+        return $fallbackName;
+    }
+
+    // Extract OUI (first 6 characters) for cache key
+    $oui = strtoupper(preg_replace('/[^a-fA-F0-9]/', '', substr($macAddress, 0, 8)));
+    if (strlen($oui) < 6) {
+        return $fallbackName;
+    }
+    $oui = substr($oui, 0, 6);
+
+    // Check cache in database (valid for 30 days)
+    $conn = getDBConnection();
+    $stmt = $conn->prepare("
+        SELECT vendor_name, cached_at
+        FROM mac_vendor_cache
+        WHERE oui = ? AND cached_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ");
+    $stmt->bind_param("s", $oui);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        return $row['vendor_name'];
+    }
+
+    // Not in cache or expired - fetch from API
+    $url = "https://api.macvendors.com/" . urlencode($macAddress);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3); // 3 second timeout
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2); // 2 second connection timeout
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    // Successfully got vendor from API
+    if ($response && $httpCode === 200 && !empty(trim($response))) {
+        $vendorName = trim($response);
+
+        // Cache the result
+        $stmt = $conn->prepare("
+            INSERT INTO mac_vendor_cache (oui, vendor_name, cached_at)
+            VALUES (?, ?, NOW())
+            ON DUPLICATE KEY UPDATE vendor_name = ?, cached_at = NOW()
+        ");
+        $stmt->bind_param("sss", $oui, $vendorName, $vendorName);
+        $stmt->execute();
+
+        return $vendorName;
+    }
+
+    // API returned 404 or empty response - vendor not found
+    // Cache fallback name to prevent repeated API calls
+    $stmt = $conn->prepare("
+        INSERT INTO mac_vendor_cache (oui, vendor_name, cached_at)
+        VALUES (?, ?, NOW())
+        ON DUPLICATE KEY UPDATE vendor_name = ?, cached_at = NOW()
+    ");
+    $stmt->bind_param("sss", $oui, $fallbackName, $fallbackName);
+    $stmt->execute();
+
+    return $fallbackName;
+}

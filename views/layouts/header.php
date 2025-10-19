@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo time(); ?>">
+    <!-- Client-Side Logger -->
+    <script src="/assets/js/client-logger.js?v=<?php echo time(); ?>"></script>
 </head>
 <body>
     <!-- Sidebar -->

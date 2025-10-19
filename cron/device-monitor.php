@@ -4,8 +4,28 @@
  * Device Monitor - Cron Job
  *
  * Monitor device status and send Telegram notifications
- * Run this script every 5 minutes via crontab:
- * */5 * * * * /usr/bin/php /home/nokito-gacs-dev/htdocs/gacs-dev.youdomain.com/cron/device-monitor.php
+ *
+ * SETUP CRON JOB:
+ * Run this script every 5 minutes via crontab.
+ *
+ * To edit crontab:
+ *   crontab -e
+ *
+ * Add this line (replace /path/to/project with your actual project path):
+ *   */5 * * * * /usr/bin/php /path/to/project/cron/device-monitor.php >> /var/log/gacs-monitor.log 2>&1
+ *
+ * Example:
+ *   */5 * * * * /usr/bin/php /var/www/html/gacs-dashboard/cron/device-monitor.php >> /var/log/gacs-monitor.log 2>&1
+ *
+ * To find your project path, run this command from project root:
+ *   pwd
+ *
+ * Alternative intervals:
+ *   */1 * * * *  - Every 1 minute (not recommended, too frequent)
+ *   */5 * * * *  - Every 5 minutes (recommended)
+ *   */10 * * * * - Every 10 minutes
+ *   */15 * * * * - Every 15 minutes
+ *   0 * * * *    - Every hour
  */
 
 require_once __DIR__ . '/../config/config.php';

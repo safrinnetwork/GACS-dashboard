@@ -1,4 +1,9 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display, but log
+ini_set('log_errors', 1);
+ini_set('error_log', '/tmp/map-add-item-error.log');
+
 require_once __DIR__ . '/../config/config.php';
 
 header('Content-Type: application/json');
@@ -19,7 +24,23 @@ function getGenieACSConnection($conn) {
     return null;
 }
 
-$data = json_decode(file_get_contents('php://input'), true);
+try {
+    $rawInput = file_get_contents('php://input');
+    error_log("Raw input: " . $rawInput);
+
+    $data = json_decode($rawInput, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("JSON decode error: " . json_last_error_msg());
+        jsonResponse(['success' => false, 'message' => 'Invalid JSON: ' . json_last_error_msg()]);
+    }
+
+    error_log("Decoded data: " . print_r($data, true));
+
+} catch (Exception $e) {
+    error_log("Exception reading input: " . $e->getMessage());
+    jsonResponse(['success' => false, 'message' => 'Error reading input: ' . $e->getMessage()]);
+}
 
 $itemType = $data['item_type'] ?? '';
 $parentId = $data['parent_id'] ?? null;
@@ -44,7 +65,13 @@ if ($itemType === 'onu' && !empty($genieacsDeviceId)) {
 }
 
 // For ONU, get parent_id from parent_odp field
-if ($itemType === 'onu' && isset($data['parent_odp'])) {
+if ($itemType === 'onu') {
+    if (empty($data['parent_odp'])) {
+        jsonResponse(['success' => false, 'message' => 'Parent ODP harus dipilih untuk ONU']);
+    }
+    if (empty($data['odp_port'])) {
+        jsonResponse(['success' => false, 'message' => 'ODP Port harus dipilih untuk ONU']);
+    }
     $parentId = $data['parent_odp'];
 }
 
@@ -61,16 +88,23 @@ if ($itemType === 'olt' && isset($data['olt_link'])) {
 }
 
 $conn = getDBConnection();
-$stmt = $conn->prepare("INSERT INTO map_items (item_type, parent_id, name, latitude, longitude, genieacs_device_id, properties, status)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, 'unknown')");
-$propertiesJson = json_encode($properties);
-$stmt->bind_param("sisddss", $itemType, $parentId, $name, $latitude, $longitude, $genieacsDeviceId, $propertiesJson);
 
-if (!$stmt->execute()) {
-    jsonResponse(['success' => false, 'message' => 'Gagal menambahkan item: ' . $conn->error]);
+try {
+    $stmt = $conn->prepare("INSERT INTO map_items (item_type, parent_id, name, latitude, longitude, genieacs_device_id, properties, status)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, 'unknown')");
+    $propertiesJson = json_encode($properties);
+    $stmt->bind_param("sisddss", $itemType, $parentId, $name, $latitude, $longitude, $genieacsDeviceId, $propertiesJson);
+
+    if (!$stmt->execute()) {
+        error_log("Insert error: " . $conn->error);
+        jsonResponse(['success' => false, 'message' => 'Gagal menambahkan item: ' . $conn->error]);
+    }
+
+    $itemId = $conn->insert_id;
+} catch (Exception $e) {
+    error_log("Exception on insert: " . $e->getMessage());
+    jsonResponse(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
 }
-
-$itemId = $conn->insert_id;
 
 // Handle specific item type configurations
 try {
@@ -87,21 +121,75 @@ try {
                 $stmt->execute();
             }
 
-            // Create ODC as a real database item (for ODP parent relation) but mark as hidden
-            if (!empty($data['odc_name']) && !empty($data['odc_pon_port'])) {
-                $odcName = $data['odc_name'];
-                $odcPonPort = $data['odc_pon_port'];
-                $odcPortCount = $data['odc_port_count'] ?? 4;
+            // Create multiple ODCs as real database items (for ODP parent relation) but mark as hidden
+            // Support both old format (single ODC) and new format (array of ODCs)
+            $odcItems = [];
 
-                // Get PON power from the selected server PON port
-                $stmt = $conn->prepare("SELECT output_power FROM server_pon_ports WHERE map_item_id = ? AND port_number = ?");
+            // Check for old format (single ODC) for backward compatibility
+            if (!empty($data['odc_name']) && !empty($data['odc_pon_port'])) {
+                $odcItems[] = [
+                    'name' => $data['odc_name'],
+                    'pon_port' => $data['odc_pon_port'],
+                    'port_count' => $data['odc_port_count'] ?? 4
+                ];
+            }
+
+            // Check for new format (array of ODCs)
+            if (!empty($data['odc_items']) && is_array($data['odc_items'])) {
+                foreach ($data['odc_items'] as $odcItem) {
+                    if (!empty($odcItem['name']) && !empty($odcItem['pon_port'])) {
+                        $odcItems[] = [
+                            'name' => $odcItem['name'],
+                            'pon_port' => $odcItem['pon_port'],
+                            'port_count' => $odcItem['port_count'] ?? 4
+                        ];
+                    }
+                }
+            }
+
+            // Check for flat format (odc_items[1][name], odc_items[1][pon_port], etc.)
+            // This format appears when form data is JSON-encoded with flat keys
+            $flatOdcItems = [];
+            foreach ($data as $key => $value) {
+                // Match keys like "odc_items[1][name]", "odc_items[2][pon_port]", etc.
+                if (preg_match('/^odc_items\[(\d+)\]\[(name|pon_port|port_count)\]$/', $key, $matches)) {
+                    $index = $matches[1];
+                    $field = $matches[2];
+                    if (!isset($flatOdcItems[$index])) {
+                        $flatOdcItems[$index] = [];
+                    }
+                    $flatOdcItems[$index][$field] = $value;
+                }
+            }
+
+            // Add flat ODC items to the main array
+            foreach ($flatOdcItems as $odcItem) {
+                if (!empty($odcItem['name']) && !empty($odcItem['pon_port'])) {
+                    $odcItems[] = [
+                        'name' => $odcItem['name'],
+                        'pon_port' => $odcItem['pon_port'],
+                        'port_count' => $odcItem['port_count'] ?? 4
+                    ];
+                }
+            }
+
+            // Create all ODC items
+            $createdOdcIds = [];
+            foreach ($odcItems as $odcData) {
+                $odcName = $odcData['name'];
+                $odcPonPort = $odcData['pon_port'];
+                $odcPortCount = $odcData['port_count'];
+
+                // Get PON power and ID from the selected server PON port
+                $stmt = $conn->prepare("SELECT id, output_power FROM server_pon_ports WHERE map_item_id = ? AND port_number = ?");
                 $stmt->bind_param("ii", $itemId, $odcPonPort);
                 $stmt->execute();
                 $result = $stmt->get_result();
                 $ponPowerRow = $result->fetch_assoc();
                 $ponPower = $ponPowerRow['output_power'] ?? 2.0;
+                $oltPonPortId = $ponPowerRow['id'] ?? null;
 
-                // Calculate ODC power = PON power
+                // Calculate ODC power = PON power - attenuation
                 $attenuationOltToOdc = 5.8;
                 $odcCalculatedPower = $ponPower - $attenuationOltToOdc;
 
@@ -112,15 +200,22 @@ try {
                 $stmt->execute();
                 $odcItemId = $conn->insert_id;
 
-                // Insert ODC config
-                $stmt = $conn->prepare("INSERT INTO odc_config (map_item_id, olt_pon_port_id, server_pon_port, port_count, parent_attenuation_db, calculated_power) VALUES (?, NULL, ?, ?, ?, ?)");
-                $stmt->bind_param("iiidd", $odcItemId, $odcPonPort, $odcPortCount, $attenuationOltToOdc, $odcCalculatedPower);
+                // Insert ODC config with server_id reference AND olt_pon_port_id
+                // CRITICAL: olt_pon_port_id must be set for PON port tracking (prevents duplicate usage)
+                $stmt = $conn->prepare("INSERT INTO odc_config (map_item_id, olt_pon_port_id, server_id, server_pon_port, port_count, parent_attenuation_db, calculated_power) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("iiiiddd", $odcItemId, $oltPonPortId, $itemId, $odcPonPort, $odcPortCount, $attenuationOltToOdc, $odcCalculatedPower);
                 $stmt->execute();
 
-                // Also store in server properties for chain visualization reference
-                $properties['odc_id'] = $odcItemId;
-                $properties['odc_name'] = $odcName;
-                $properties['odc_pon_port'] = $odcPonPort;
+                $createdOdcIds[] = [
+                    'id' => $odcItemId,
+                    'name' => $odcName,
+                    'pon_port' => $odcPonPort
+                ];
+            }
+
+            // Store all created ODCs in server properties for chain visualization reference
+            if (!empty($createdOdcIds)) {
+                $properties['odc_items'] = $createdOdcIds;
 
                 // Update map_items with new properties
                 $propertiesJson = json_encode($properties);
@@ -165,10 +260,9 @@ try {
                     $serverPonPort = $row['port_number'];
                     $serverId = $row['map_item_id'];
 
-                    // Update parent_id to the Server item
-                    $updateStmt = $conn->prepare("UPDATE map_items SET parent_id = ? WHERE id = ?");
-                    $updateStmt->bind_param("ii", $serverId, $itemId);
-                    $updateStmt->execute();
+                    // DO NOT UPDATE parent_id - ODC standalone should have NULL parent_id
+                    // parent_id only set for ODC created via Server form (in lines 144-145)
+                    // ODC created via "Add Item" -> "ODC" form should remain standalone (parent_id = NULL)
                 }
             }
 
@@ -176,8 +270,9 @@ try {
             $attenuationOltToOdc = 5.8;
             $calculatedPower = $ponPower - $attenuationOltToOdc;
 
-            $stmt = $conn->prepare("INSERT INTO odc_config (map_item_id, olt_pon_port_id, server_pon_port, port_count, parent_attenuation_db, calculated_power) VALUES (?, NULL, ?, ?, ?, ?)");
-            $stmt->bind_param("iiidd", $itemId, $serverPonPort, $portCount, $attenuationOltToOdc, $calculatedPower);
+            // Save olt_pon_port_id (server_pon_ports.id) to track which server PON port is used
+            $stmt = $conn->prepare("INSERT INTO odc_config (map_item_id, olt_pon_port_id, server_pon_port, port_count, parent_attenuation_db, calculated_power) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iiiddd", $itemId, $oltPonPortId, $serverPonPort, $portCount, $attenuationOltToOdc, $calculatedPower);
             $stmt->execute();
             break;
 
@@ -187,6 +282,12 @@ try {
             $parentOdpPort = $data['parent_odp_port'] ?? null;
             $useSplitter = $data['use_splitter'] ?? 0;
             $splitterRatio = $data['splitter_ratio'] ?? '1:8';
+            $customRatioOutputPort = $data['custom_ratio_output_port'] ?? null;
+
+            // AUTO-CALCULATE secondary splitter from Port Count
+            // Port Count directly determines secondary splitter ratio
+            $useSecondarySplitter = 1; // Always use secondary splitter
+            $secondarySplitterRatio = "1:{$portCount}"; // e.g., Port Count 8 = 1:8, Port Count 32 = 1:32
 
             // Determine parent type (ODC or ODP)
             $inputPower = 0; // Power before splitter (untuk cascading)
@@ -263,13 +364,28 @@ try {
 
             $calculator = new PONCalculator();
 
-            // Calculate power using standard method (works for both standard and custom ratios)
-            // Custom ratio loss values already include internal distribution to ports
-            $calculatedPower = $calculator->calculateODPPower($inputPower, $useSplitter ? $splitterRatio : null);
+            // Calculate power through cascade splitters
+            $powerAfterPrimarySplitter = $inputPower;
 
-            // Store both input_power (before splitter) and calculated_power (after splitter)
-            $stmt = $conn->prepare("INSERT INTO odp_config (map_item_id, port_count, odc_port, input_power, parent_odp_port, use_splitter, splitter_ratio, calculated_power) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iiidsisd", $itemId, $portCount, $odcPort, $inputPower, $parentOdpPort, $useSplitter, $splitterRatio, $calculatedPower);
+            // Step 1: Calculate power after primary splitter (if used)
+            if ($useSplitter && $customRatioOutputPort) {
+                // Custom ratio splitter - calculate power for specific output port
+                $powerAfterPrimarySplitter = $calculator->calculateCustomRatioPort($inputPower, $splitterRatio, $customRatioOutputPort);
+            } elseif ($useSplitter) {
+                // Standard splitter (shouldn't happen with new UI but keep for compatibility)
+                $powerAfterPrimarySplitter = $calculator->calculateODPPower($inputPower, $splitterRatio);
+            }
+
+            // Step 2: Calculate power after secondary splitter (if used)
+            $calculatedPower = $powerAfterPrimarySplitter;
+            if ($useSecondarySplitter && $secondarySplitterRatio) {
+                // Apply secondary splitter loss
+                $calculatedPower = $calculator->calculateODPPower($powerAfterPrimarySplitter, $secondarySplitterRatio);
+            }
+
+            // Store both input_power (before splitter) and calculated_power (after all splitters)
+            $stmt = $conn->prepare("INSERT INTO odp_config (map_item_id, port_count, odc_port, input_power, parent_odp_port, use_splitter, splitter_ratio, custom_ratio_output_port, use_secondary_splitter, secondary_splitter_ratio, calculated_power) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iiidsissisd", $itemId, $portCount, $odcPort, $inputPower, $parentOdpPort, $useSplitter, $splitterRatio, $customRatioOutputPort, $useSecondarySplitter, $secondarySplitterRatio, $calculatedPower);
             $stmt->execute();
             break;
 

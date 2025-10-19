@@ -17,6 +17,10 @@ Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topol
 
 ---
 
+## ➤ Telegram Support
+
+- https://t.me/+QDz9bvRUZ95hZGY1
+
 ## 📋 Table of Contents
 
 - [About](#-about)
@@ -69,7 +73,7 @@ Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topol
 - GPS coordinates untuk setiap device
 - Auto power calculation melalui hierarchy
 
-### Telegram Bot Features
+### Telegram Bot Features ( BUG )
 
 - 🤖 **Interactive Menu** - Inline keyboard untuk semua fungsi
 - 🔐 **Role-Based Access** - 3 roles (Admin, Operator, Viewer) dengan 11 permissions
@@ -221,7 +225,7 @@ VALUES ('YOUR_CHAT_ID', 'username', 'Your Name', 'admin', 1);
 
 ---
 
-## 🤖 Telegram Bot Features
+## 🤖 Telegram Bot Features ( BUG )
 
 ### Main Menu Commands
 
@@ -625,6 +629,7 @@ This project is licensed under the **MIT License** - see LICENSE file for detail
 ## 🙏 Credits
 
 **Developed by:** Mostech
+
 **Special Thanks:**
 
 - GenieACS community
@@ -641,6 +646,6 @@ This project is licensed under the **MIT License** - see LICENSE file for detail
 
 ---
 
-**GACS Dashboard v1.0.0-beta** | **Status: Production Ready** ✅
+**GACS Dashboard v1.1.0-beta** | **Status: Production Ready** ✅
 
 </div>

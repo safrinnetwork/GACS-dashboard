@@ -104,6 +104,7 @@ switch ($item['item_type']) {
             $port_rx_power = [];
             $port_serial_number = [];
             $port_device_id = [];
+            $port_status = [];
 
             // Query all ONUs connected to this ODP
             $stmt = $conn->prepare("
@@ -138,7 +139,7 @@ switch ($item['item_type']) {
                 }
             }
 
-            // Fetch RX Power for each ONU
+            // Fetch RX Power and Status for each ONU
             while ($onu = $result->fetch_assoc()) {
                 $port = $onu['odp_port'];
                 $deviceId = $onu['genieacs_device_id'];
@@ -151,6 +152,18 @@ switch ($item['item_type']) {
                             $port_rx_power[$port] = $parsed['rx_power'];
                             $port_serial_number[$port] = $parsed['serial_number'];
                             $port_device_id[$port] = $deviceId; // Store device ID for linking
+
+                            // Get ONU status from last inform time
+                            if (isset($deviceResult['data']['_lastInform'])) {
+                                $lastInform = strtotime($deviceResult['data']['_lastInform']);
+                                $now = time();
+                                $diff = $now - $lastInform;
+
+                                // Online if last inform < 5 minutes
+                                $port_status[$port] = ($diff < 300) ? 'online' : 'offline';
+                            } else {
+                                $port_status[$port] = 'unknown';
+                            }
                         }
                     }
                 }
@@ -159,6 +172,7 @@ switch ($item['item_type']) {
             $config['port_rx_power'] = $port_rx_power;
             $config['port_serial_number'] = $port_serial_number;
             $config['port_device_id'] = $port_device_id;
+            $config['port_status'] = $port_status;
         }
         break;
     case 'onu':

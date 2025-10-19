@@ -7,38 +7,34 @@ namespace App;
  */
 class PONCalculator {
 
-    // Splitter ratio losses (in dB)
-    private static $splitterLosses = [
-        '1:2' => 3.5,
-        '1:4' => 7.0,
-        '1:8' => 10.5,
-        '1:16' => 14.0,
-        '1:32' => 17.5,
-        '1:64' => 21.0,
-    ];
+    // Insertion loss (applies to all splitters)
+    const INSERTION_LOSS = 0.7; // dB
 
-    // Custom ratio losses (based on pemudanet.com calculator)
-    // Note: These values represent the loss for the SMALLER port percentage
-    private static $customRatioLosses = [
-        '20:80' => 16.8,  // 20% output = -16.8 dB
-        '30:70' => 13.5,  // 30% output = -13.5 dB
-        '50:50' => 10.0,  // 50% output = -10.0 dB
+    // Splitter ratio losses (in dB) - WITHOUT insertion loss
+    // Insertion loss will be added separately
+    private static $splitterLosses = [
+        '1:2' => 3.01,   // Split loss only
+        '1:4' => 6.02,   // Split loss only
+        '1:8' => 9.03,   // Split loss only
+        '1:16' => 12.04, // Split loss only
+        '1:32' => 15.05, // Split loss only
+        '1:64' => 18.06, // Split loss only
     ];
 
     // Custom ratio losses for each port (calculated from percentage)
     // Formula: Loss (dB) = 10 × log10(1 / percentage)
+    // These are SPLIT losses only, insertion loss added separately
     private static $customRatioPortLosses = [
         '20:80' => [
-            '20' => 6.99,  // 10 × log10(1/0.20) ≈ 7.0 dB
-            '80' => 0.97,  // 10 × log10(1/0.80) ≈ 1.0 dB
+            '20' => 6.99,  // 10 × log10(1/0.20)
+            '80' => 0.97,  // 10 × log10(1/0.80)
         ],
         '30:70' => [
-            '30' => 5.23,  // 10 × log10(1/0.30) ≈ 5.2 dB
-            '70' => 1.55,  // 10 × log10(1/0.70) ≈ 1.5 dB
+            '30' => 5.23,  // 10 × log10(1/0.30)
+            '70' => 1.55,  // 10 × log10(1/0.70)
         ],
         '50:50' => [
-            '50' => 3.01,  // 10 × log10(1/0.50) = 3.0 dB
-            '50' => 3.01,  // Same for both ports
+            '50' => 3.01,  // 10 × log10(1/0.50)
         ],
     ];
 
@@ -198,24 +194,38 @@ class PONCalculator {
     /**
      * Calculate ODP Power (simplified for map)
      *
-     * NOTE: Custom ratios (20:80, 30:70, 50:50) loss values INCLUDE internal splitter distribution.
-     * These values are from pemudanet.com PON calculator and represent:
-     * - Total loss from input to final output (already includes splitting to multiple ports)
-     * - NOT just the ratio split, but ratio split + internal distribution
+     * For standard splitters (1:2, 1:4, 1:8, etc):
+     * - Total loss = Split loss + Insertion loss (0.7 dB)
+     * - Example: 1:8 = 9.03 dB + 0.7 dB = 9.73 dB total
+     *
+     * For custom ratio splitters (20:80, 30:70, 50:50):
+     * - These use asymmetric split, already include ratio calculation
+     * - Still need to add insertion loss (0.7 dB)
+     * - Example: 20:80 ratio uses 20% port = 6.99 dB + 0.7 dB = 7.69 dB total
+     *
+     * IMPORTANT: Always add insertion loss for ANY splitter configuration
      */
     public function calculateODPPower($parentPower, $splitterRatio = null) {
-        $splitterLoss = 0;
-
-        if ($splitterRatio) {
-            // Check both standard and custom ratios
-            if (isset(self::$splitterLosses[$splitterRatio])) {
-                $splitterLoss = self::$splitterLosses[$splitterRatio];
-            } elseif (isset(self::$customRatioLosses[$splitterRatio])) {
-                $splitterLoss = self::$customRatioLosses[$splitterRatio];
-            }
+        if (!$splitterRatio) {
+            // No splitter - just pass through power
+            return $parentPower;
         }
 
-        $calculatedPower = $parentPower - $splitterLoss;
+        // Get split loss (WITHOUT insertion loss yet)
+        $splitLoss = 0;
+        if (isset(self::$splitterLosses[$splitterRatio])) {
+            // Standard splitter (1:2, 1:4, 1:8, etc.)
+            $splitLoss = self::$splitterLosses[$splitterRatio];
+        } elseif (isset(self::$customRatioLosses[$splitterRatio])) {
+            // Custom ratio - this is wrong approach, should not be here
+            // Custom ratios should use calculateCustomRatioPort() instead
+            $splitLoss = self::$customRatioLosses[$splitterRatio];
+        }
+
+        // Add insertion loss (ALWAYS added for any splitter)
+        $totalLoss = $splitLoss + self::INSERTION_LOSS;
+
+        $calculatedPower = $parentPower - $totalLoss;
 
         return $calculatedPower;
     }
@@ -235,10 +245,116 @@ class PONCalculator {
         // Get port loss from lookup table
         if (isset(self::$customRatioPortLosses[$ratio][$selectedPort])) {
             $portLoss = self::$customRatioPortLosses[$ratio][$selectedPort];
-            return $basePower - $portLoss;
+            // Add insertion loss
+            $totalLoss = $portLoss + self::INSERTION_LOSS;
+            return $basePower - $totalLoss;
         }
 
         // Fallback: if ratio not found, return base power
         return $basePower;
+    }
+
+    /**
+     * Calculate cascading power through ODP chain
+     *
+     * Example usage from your logic:
+     * PON OLT > ODC (1:4) > ODP (20%:80%) > ODP (1:8)
+     *
+     * @param float $inputPower Starting RX power (e.g., 8.00 dBm from OLT)
+     * @param array $cascade Array of splitter configurations
+     *   Example: [
+     *     ['type' => 'standard', 'ratio' => '1:4'],
+     *     ['type' => 'custom', 'ratio' => '20:80', 'port' => '20'],
+     *     ['type' => 'standard', 'ratio' => '1:8']
+     *   ]
+     * @return array Calculation steps and final result
+     */
+    public static function calculateCascade($inputPower, $cascade) {
+        $currentPower = $inputPower;
+        $steps = [];
+
+        foreach ($cascade as $index => $config) {
+            $stepNum = $index + 1;
+            $stepPower = $currentPower;
+
+            if ($config['type'] === 'standard') {
+                // Standard splitter (1:2, 1:4, 1:8, etc.)
+                $ratio = $config['ratio'];
+                $splitLoss = self::$splitterLosses[$ratio] ?? 9.03;
+                $totalLoss = $splitLoss + self::INSERTION_LOSS;
+                $outputPower = $currentPower - $totalLoss;
+
+                $steps[] = [
+                    'step' => $stepNum,
+                    'type' => 'Standard Splitter',
+                    'ratio' => $ratio,
+                    'input_power' => round($currentPower, 2),
+                    'split_loss' => round($splitLoss, 2),
+                    'insertion_loss' => self::INSERTION_LOSS,
+                    'total_loss' => round($totalLoss, 2),
+                    'output_power' => round($outputPower, 2),
+                    'formula' => "{$currentPower} dBm - ({$splitLoss} dB + " . self::INSERTION_LOSS . " dB) = {$outputPower} dBm"
+                ];
+
+                $currentPower = $outputPower;
+
+            } elseif ($config['type'] === 'custom') {
+                // Custom ratio splitter (20:80, 30:70, 50:50)
+                $ratio = $config['ratio'];
+                $port = $config['port'];
+
+                // Get port loss
+                $portLoss = self::$customRatioPortLosses[$ratio][$port] ?? 3.01;
+                $totalLoss = $portLoss + self::INSERTION_LOSS;
+                $outputPower = $currentPower - $totalLoss;
+
+                // Calculate the OTHER port power (for reference)
+                list($port1, $port2) = explode(':', $ratio);
+                $otherPort = ($port == $port1) ? $port2 : $port1;
+                $otherPortLoss = self::$customRatioPortLosses[$ratio][$otherPort] ?? 3.01;
+                $otherPortPower = $currentPower - $otherPortLoss - self::INSERTION_LOSS;
+
+                $steps[] = [
+                    'step' => $stepNum,
+                    'type' => 'Custom Ratio Splitter',
+                    'ratio' => $ratio,
+                    'selected_port' => $port . '%',
+                    'input_power' => round($currentPower, 2),
+                    'port_loss' => round($portLoss, 2),
+                    'insertion_loss' => self::INSERTION_LOSS,
+                    'total_loss' => round($totalLoss, 2),
+                    'output_power' => round($outputPower, 2),
+                    'other_port' => $otherPort . '%',
+                    'other_port_power' => round($otherPortPower, 2),
+                    'formula' => "{$currentPower} dBm - ({$portLoss} dB + " . self::INSERTION_LOSS . " dB) = {$outputPower} dBm"
+                ];
+
+                $currentPower = $outputPower;
+            }
+        }
+
+        return [
+            'input_power' => round($inputPower, 2),
+            'final_power' => round($currentPower, 2),
+            'total_steps' => count($steps),
+            'steps' => $steps
+        ];
+    }
+
+    /**
+     * Get total loss for a standard splitter (including insertion loss)
+     */
+    public static function getSplitterTotalLoss($ratio) {
+        $splitLoss = self::$splitterLosses[$ratio] ?? 9.03;
+        return $splitLoss + self::INSERTION_LOSS;
+    }
+
+    /**
+     * Get total loss for a custom ratio port (including insertion loss)
+     */
+    public static function getCustomPortTotalLoss($ratio, $port) {
+        $port = str_replace('%', '', $port);
+        $portLoss = self::$customRatioPortLosses[$ratio][$port] ?? 3.01;
+        return $portLoss + self::INSERTION_LOSS;
     }
 }

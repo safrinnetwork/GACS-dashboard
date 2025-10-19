@@ -1,7 +1,7 @@
 // GACS Dashboard JavaScript Utilities
 
 // Toast Notification
-function showToast(message, type = 'info') {
+function showToast(message, type = 'info', duration = 3000) {
     const toast = document.createElement('div');
     toast.className = `alert alert-${type}`;
     toast.style.position = 'fixed';
@@ -9,6 +9,7 @@ function showToast(message, type = 'info') {
     toast.style.right = '20px';
     toast.style.zIndex = '9999';
     toast.style.minWidth = '300px';
+    toast.style.maxWidth = '500px';
     toast.style.animation = 'slideInRight 0.3s ease';
     toast.textContent = message;
 
@@ -17,7 +18,7 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         toast.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    }, duration);
 }
 
 // AJAX Helper
@@ -34,10 +35,7 @@ async function fetchAPI(url, options = {}) {
 
         // Check if response is OK
         if (!response.ok) {
-            // Log error for debugging in development
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                console.error('HTTP Error:', response.status, response.statusText);
-            }
+            console.error('HTTP Error:', response.status, response.statusText, 'URL:', url);
         }
 
         // Get content type
@@ -48,20 +46,17 @@ async function fetchAPI(url, options = {}) {
             const data = await response.json();
             return data;
         } else {
-            // Response is not JSON (probably HTML error page)
+            // Response is not JSON (probably HTML error page or PHP error)
             const text = await response.text();
-            // Only log in development
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                console.error('Non-JSON response:', text.substring(0, 200));
-            }
-            showToast('Server mengembalikan response yang tidak valid.', 'danger');
+            console.error('Non-JSON response from', url, ':', text.substring(0, 500));
+
+            // Show first 200 chars of error in toast for debugging
+            const errorPreview = text.substring(0, 200).replace(/<[^>]*>/g, ''); // Remove HTML tags
+            showToast('Server error: ' + errorPreview, 'danger');
             return null;
         }
     } catch (error) {
-        // Only log in development
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            console.error('API Error:', error);
-        }
+        console.error('Fetch error for', url, ':', error);
         showToast('Terjadi kesalahan koneksi: ' + error.message, 'danger');
         return null;
     }

@@ -742,6 +742,137 @@ class GenieACS {
 
         $data['wan_details'] = $wanDetails;
 
+        // Extract PPPoE username from first PPPoE connection (for devices.php display)
+        $pppoeUsername = 'N/A';
+        foreach ($wanDetails as $wan) {
+            if ($wan['type'] === 'PPPoE' && isset($wan['username']) && $wan['username'] !== 'N/A' && $wan['username'] !== '') {
+                $pppoeUsername = $wan['username'];
+                break; // Use first found PPPoE username (non-empty)
+            }
+        }
+        $data['pppoe_username'] = $pppoeUsername;
+
+        // Connected Devices (LAN Hosts)
+        $connectedDevices = [];
+
+        // Get hosts from LANDevice.1.Hosts.Host
+        $hostsBase = 'InternetGatewayDevice.LANDevice.1.Hosts.Host';
+
+        // Get device's last inform time for comparison
+        $deviceLastInformTime = null;
+        if ($lastInform) {
+            $deviceLastInformTime = strtotime($lastInform);
+        }
+
+        // Try to get hosts object
+        if (isset($device['InternetGatewayDevice']['LANDevice']['1']['Hosts']['Host'])) {
+            $hosts = $device['InternetGatewayDevice']['LANDevice']['1']['Hosts']['Host'];
+
+            // Iterate through all host entries
+            foreach ($hosts as $hostId => $hostData) {
+                // Skip metadata fields
+                if (strpos($hostId, '_') === 0) {
+                    continue;
+                }
+
+                // Get host details
+                $ipAddress = isset($hostData['IPAddress']['_value']) ? $hostData['IPAddress']['_value'] : null;
+                $macAddress = isset($hostData['MACAddress']['_value']) ? $hostData['MACAddress']['_value'] : null;
+                $hostName = isset($hostData['HostName']['_value']) ? $hostData['HostName']['_value'] : '';
+                $interfaceType = isset($hostData['InterfaceType']['_value']) ? $hostData['InterfaceType']['_value'] : 'Unknown';
+                $active = isset($hostData['Active']['_value']) ? $hostData['Active']['_value'] : null;
+                $timestamp = isset($hostData['_timestamp']) ? $hostData['_timestamp'] : null;
+
+                // Only add devices with valid IP and MAC
+                if ($ipAddress && $macAddress) {
+                    // Filter strategy: Only count hosts that were updated recently relative to device last inform
+                    // This filters out old/disconnected devices from GenieACS historical data
+                    $isRecentlyActive = true; // Default to true if no timestamp
+
+                    if ($timestamp && $deviceLastInformTime) {
+                        $hostTimestamp = strtotime($timestamp);
+                        if ($hostTimestamp !== false) {
+                            // Strategy: Count host as active if:
+                            // 1. Host timestamp is within 3 hours before OR after device last inform
+                            // 2. This catches hosts that were active around the time of last inform
+                            //    (accounts for clock drift and DHCP lease refresh timing)
+                            $threeHoursBefore = $deviceLastInformTime - (3 * 3600);
+                            $threeHoursAfter = $deviceLastInformTime + (3 * 3600);
+                            $isRecentlyActive = ($hostTimestamp >= $threeHoursBefore && $hostTimestamp <= $threeHoursAfter);
+                        }
+                    }
+
+                    // Skip hosts that are not recently active
+                    if (!$isRecentlyActive) {
+                        continue;
+                    }
+
+                    // Determine interface type (WiFi/LAN)
+                    $connectionType = 'LAN';
+                    if ($interfaceType === '802.11') {
+                        $connectionType = 'WiFi';
+                    } elseif ($interfaceType === 'Ethernet') {
+                        $connectionType = 'Ethernet';
+                    }
+
+                    // Get MAC vendor name
+                    $vendorName = getMACVendor($macAddress, $hostName);
+
+                    // If hostname is empty and vendor found, use vendor name
+                    // Otherwise use "Unknown Device"
+                    if (empty($hostName) || trim($hostName) === '') {
+                        $hostName = $vendorName;
+                    }
+
+                    $connectedDevices[] = [
+                        'hostname' => $hostName,
+                        'vendor' => $vendorName,
+                        'ip_address' => $ipAddress,
+                        'mac_address' => $macAddress,
+                        'interface_type' => $connectionType,
+                        'active' => $active ?? true, // Default to active if not specified
+                    ];
+                }
+            }
+        }
+
+        $data['connected_devices'] = $connectedDevices;
+        $data['connected_devices_count'] = count($connectedDevices);
+
+        // DHCP Server Configuration
+        $dhcpServer = [];
+        $dhcpBase = 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement';
+
+        // Check if DHCP capability exists by checking for any DHCP parameter
+        // (not just DHCPServerEnable, as it may not have _value if not configured)
+        $hasdhcpCapability = false;
+
+        // Check multiple DHCP parameters to determine if device supports DHCP
+        $dhcpEnabled = $getParam("{$dhcpBase}.DHCPServerEnable");
+        $dhcpLeaseTime = $getParam("{$dhcpBase}.DHCPLeaseTime");
+
+        // Device has DHCP capability if any DHCP parameter is present
+        if ($dhcpEnabled !== null || $dhcpLeaseTime !== null) {
+            $hasdhcpCapability = true;
+        }
+
+        if ($hasdhcpCapability) {
+            // Extract DHCP parameters (use false/N/A as defaults if not configured)
+            $dhcpServer['enabled'] = $dhcpEnabled ?? false;
+            $dhcpServer['configurable'] = $getParam("{$dhcpBase}.DHCPServerConfigurable") ?? true;
+            $dhcpServer['min_address'] = $getParam("{$dhcpBase}.MinAddress") ?? 'N/A';
+            $dhcpServer['max_address'] = $getParam("{$dhcpBase}.MaxAddress") ?? 'N/A';
+            $dhcpServer['subnet_mask'] = $getParam("{$dhcpBase}.SubnetMask") ?? 'N/A';
+            $dhcpServer['gateway'] = $getParam("{$dhcpBase}.IPRouters") ?? 'N/A';
+            $dhcpServer['dns_servers'] = $getParam("{$dhcpBase}.DNSServers") ?? 'N/A';
+            $dhcpServer['lease_time'] = $dhcpLeaseTime ?? 86400; // Default to 24 hours
+
+            $data['dhcp_server'] = $dhcpServer;
+        } else {
+            // Device does not support DHCP - set to null
+            $data['dhcp_server'] = null;
+        }
+
         return $data;
     }
 }
