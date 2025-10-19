@@ -11,8 +11,6 @@
 
 Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topologi jaringan GenieACS dengan real-time monitoring, editable polylines, dan integrasi Telegram.
 
-[Fitur](#-fitur) • [Instalasi](#-quick-installation) • [Dokumentasi](#-documentation) • [Screenshots](#-screenshots)
-
 </div>
 
 ---
@@ -20,21 +18,6 @@ Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topol
 ## ➤ Telegram Support
 
 - https://t.me/+QDz9bvRUZ95hZGY1
-
-## 📋 Table of Contents
-
-- [About](#-about)
-- [Features](#-fitur)
-- [Requirements](#-requirements)
-- [Quick Installation](#-quick-installation)
-- [Configuration](#-configuration)
-- [Telegram Bot](#-telegram-bot-features)
-- [Cron Jobs](#-automated-tasks-cron-jobs)
-- [Production Deployment](#-production-deployment)
-- [Screenshots](#-screenshots)
-- [Troubleshooting](#-troubleshooting)
-- [Documentation](#-documentation)
-- [License](#-license)
 
 ---
 
@@ -316,75 +299,6 @@ bash /path/to/gacs/cron/backup.sh
 
 ---
 
-## 🏭 Production Deployment
-
-### Pre-Deployment Checklist
-
-```bash
-# 1. Backup existing data
-mysqldump -u username -p database > backup_$(date +%Y%m%d).sql
-tar -czf backup_files_$(date +%Y%m%d).tar.gz /var/www/html/
-
-# 2. Set secure permissions
-chmod 600 config/database.php config/config.php
-find . -type d -exec chmod 755 {} \;
-find . -type f -exec chmod 644 {} \;
-
-# 3. Disable PHP error display
-# Edit php.ini:
-display_errors = Off
-log_errors = On
-```
-
-### Security Hardening
-
-- ✅ Enable HTTPS (Let's Encrypt recommended)
-- ✅ Change default password immediately
-- ✅ Configure firewall rules (UFW/iptables)
-- ✅ Enable fail2ban for brute-force protection
-- ✅ Restrict file access (.htaccess already configured)
-- ✅ Delete example files after setup
-
-### SSL Certificate (Let's Encrypt)
-
-```bash
-# Install Certbot
-sudo apt install certbot python3-certbot-apache  # For Apache
-sudo apt install certbot python3-certbot-nginx   # For Nginx
-
-# Obtain certificate
-sudo certbot --apache -d your-domain.com
-# OR
-sudo certbot --nginx -d your-domain.com
-
-# Auto-renewal test
-sudo certbot renew --dry-run
-```
-
-### Apache Virtual Host Example
-
-```apache
-<VirtualHost *:443>
-    ServerName your-domain.com
-    DocumentRoot /var/www/html/gacs
-
-    SSLEngine on
-    SSLCertificateFile /etc/letsencrypt/live/your-domain.com/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/your-domain.com/privkey.pem
-
-    <Directory /var/www/html/gacs>
-        Options -Indexes +FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-
-    ErrorLog ${APACHE_LOG_DIR}/gacs-error.log
-    CustomLog ${APACHE_LOG_DIR}/gacs-access.log combined
-</VirtualHost>
-```
-
----
-
 ## 📸 Screenshots
 
 ### Login Page
@@ -416,92 +330,6 @@ sudo certbot renew --dry-run
 ![Configuration](./preview/menu_konfigurasi.png)
 
 ---
-
-## 🔧 Troubleshooting
-
-### Database Connection Error
-
-```bash
-# Check credentials
-cat config/database.php
-
-# Test MySQL connection
-mysql -u your_user -p -e "SELECT 1;"
-
-# Verify database exists
-mysql -u your_user -p -e "SHOW DATABASES;"
-```
-
-### Map Not Loading
-
-1. Check browser console (F12) for errors
-2. Verify Leaflet.Editable.js exists: `ls -la assets/js/`
-3. Clear browser cache (Ctrl+Shift+R)
-4. Check GenieACS connection in Configuration
-
-### Telegram Bot Not Responding
-
-```bash
-# Check webhook status
-curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
-
-# Reset webhook
-curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://your-domain.com/webhook/telegram.php"
-
-# Check webhook access
-curl https://your-domain.com/webhook/telegram.php
-```
-
-### Cron Jobs Not Running
-
-```bash
-# Check cron service
-systemctl status cron
-
-# View cron logs
-grep CRON /var/log/syslog
-
-# Verify crontab
-crontab -l
-
-# Test script manually
-php /path/to/gacs/cron/device-monitor.php
-```
-
-### WiFi Edit Not Working
-
-**Possible causes:**
-
-- User lacks permission (Admin only)
-- Device offline
-- GenieACS not configured
-
-**Solution:**
-
-1. Verify user has `device.edit_wifi` permission (Admin role)
-2. Check device status (must be online)
-3. Test GenieACS connection: Configuration → Test Connection
-4. For queued tasks (HTTP 202), wait for device inform or reboot device
-
----
-
-### Key Documentation Sections
-
-#### Installation
-
-- Requirements & dependencies
-- Database setup & import
-- Configuration files
-- Permission setup
-- Testing installation
-
-#### Deployment
-
-- Pre-deployment checklist
-- Web server configuration (Apache/Nginx)
-- SSL certificate setup
-- Security hardening
-- Post-deployment testing
 
 #### Telegram Bot
 
