@@ -42,9 +42,21 @@ if ($httpCode !== 200) {
 
 // Save credentials if test successful
 $conn = getDBConnection();
-$stmt = $conn->prepare("INSERT INTO genieacs_credentials (host, port, username, password, is_connected) VALUES (?, ?, ?, ?, 1)
-                       ON DUPLICATE KEY UPDATE host = ?, port = ?, username = ?, password = ?, is_connected = 1, updated_at = NOW()");
-$stmt->bind_param("sissisis", $host, $port, $username, $password, $host, $port, $username, $password);
+
+// Check if record exists
+$result = $conn->query("SELECT id FROM genieacs_credentials LIMIT 1");
+$existing = $result->fetch_assoc();
+
+if ($existing) {
+    // Update existing record
+    $stmt = $conn->prepare("UPDATE genieacs_credentials SET host = ?, port = ?, username = ?, password = ?, is_connected = 1, last_test = NOW(), updated_at = NOW() WHERE id = ?");
+    $stmt->bind_param("sissi", $host, $port, $username, $password, $existing['id']);
+} else {
+    // Insert new record (first time setup)
+    $stmt = $conn->prepare("INSERT INTO genieacs_credentials (host, port, username, password, is_connected, last_test) VALUES (?, ?, ?, ?, 1, NOW())");
+    $stmt->bind_param("siss", $host, $port, $username, $password);
+}
+
 $stmt->execute();
 
 jsonResponse(['success' => true, 'message' => 'Connected to GenieACS successfully!']);

@@ -8,9 +8,9 @@ $currentPage = 'configuration';
 // Get existing configurations
 $conn = getDBConnection();
 
-$genieacs = $conn->query("SELECT * FROM genieacs_credentials ORDER BY id DESC LIMIT 1")->fetch_assoc();
-$mikrotik = $conn->query("SELECT * FROM mikrotik_credentials ORDER BY id DESC LIMIT 1")->fetch_assoc();
-$telegram = $conn->query("SELECT * FROM telegram_config ORDER BY id DESC LIMIT 1")->fetch_assoc();
+$genieacs = $conn->query("SELECT * FROM genieacs_credentials LIMIT 1")->fetch_assoc();
+$mikrotik = $conn->query("SELECT * FROM mikrotik_credentials LIMIT 1")->fetch_assoc();
+$telegram = $conn->query("SELECT * FROM telegram_config LIMIT 1")->fetch_assoc();
 
 include __DIR__ . '/views/layouts/header.php';
 ?>

@@ -89,9 +89,10 @@ CREATE TABLE IF NOT EXISTS `genieacs_credentials` (
   `last_test` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_host_port` (`host`, `port`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-COMMENT='GenieACS TR-069 ACS connection settings';
+COMMENT='GenieACS TR-069 ACS connection settings (single active config only)';
 
 -- ----------------------------------------------------------------------------
 -- TABLE: mikrotik_credentials (MikroTik RouterOS API Configuration)
@@ -107,9 +108,10 @@ CREATE TABLE IF NOT EXISTS `mikrotik_credentials` (
   `last_test` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_host_port` (`host`, `port`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-COMMENT='MikroTik RouterOS API connection settings';
+COMMENT='MikroTik RouterOS API connection settings (single active config only)';
 
 -- ----------------------------------------------------------------------------
 -- TABLE: telegram_config (Telegram Bot Configuration)
@@ -123,9 +125,10 @@ CREATE TABLE IF NOT EXISTS `telegram_config` (
   `last_test` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_bot_token` (`bot_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
-COMMENT='Telegram bot API configuration';
+COMMENT='Telegram bot API configuration (single active config only)';
 
 -- ============================================================================
 -- SECTION 3: NETWORK TOPOLOGY MAP TABLES

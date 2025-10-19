@@ -24,15 +24,15 @@ if (empty($host)) {
 $conn = getDBConnection();
 
 // Check if already exists
-$result = $conn->query("SELECT id FROM genieacs_credentials ORDER BY id DESC LIMIT 1");
+$result = $conn->query("SELECT id FROM genieacs_credentials LIMIT 1");
 $existing = $result->fetch_assoc();
 
 if ($existing) {
-    // Update existing
-    $stmt = $conn->prepare("UPDATE genieacs_credentials SET host = ?, port = ?, username = ?, password = ? WHERE id = ?");
+    // Update existing record (keep is_connected status)
+    $stmt = $conn->prepare("UPDATE genieacs_credentials SET host = ?, port = ?, username = ?, password = ?, updated_at = NOW() WHERE id = ?");
     $stmt->bind_param("sissi", $host, $port, $username, $password, $existing['id']);
 } else {
-    // Insert new
+    // Insert new record (first time setup, not connected yet)
     $stmt = $conn->prepare("INSERT INTO genieacs_credentials (host, port, username, password, is_connected) VALUES (?, ?, ?, ?, 0)");
     $stmt->bind_param("siss", $host, $port, $username, $password);
 }

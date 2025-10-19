@@ -22,15 +22,15 @@ if (empty($botToken) || empty($chatId)) {
 $conn = getDBConnection();
 
 // Check if already exists
-$result = $conn->query("SELECT id FROM telegram_config ORDER BY id DESC LIMIT 1");
+$result = $conn->query("SELECT id FROM telegram_config LIMIT 1");
 $existing = $result->fetch_assoc();
 
 if ($existing) {
-    // Update existing
-    $stmt = $conn->prepare("UPDATE telegram_config SET bot_token = ?, chat_id = ? WHERE id = ?");
+    // Update existing record (keep is_connected status)
+    $stmt = $conn->prepare("UPDATE telegram_config SET bot_token = ?, chat_id = ?, updated_at = NOW() WHERE id = ?");
     $stmt->bind_param("ssi", $botToken, $chatId, $existing['id']);
 } else {
-    // Insert new
+    // Insert new record (first time setup, not connected yet)
     $stmt = $conn->prepare("INSERT INTO telegram_config (bot_token, chat_id, is_connected) VALUES (?, ?, 0)");
     $stmt->bind_param("ss", $botToken, $chatId);
 }

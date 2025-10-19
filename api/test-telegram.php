@@ -59,9 +59,21 @@ if (!empty($chatId)) {
 
 // Save credentials if test successful
 $conn = getDBConnection();
-$stmt = $conn->prepare("INSERT INTO telegram_config (bot_token, chat_id, is_connected) VALUES (?, ?, 1)
-                       ON DUPLICATE KEY UPDATE bot_token = ?, chat_id = ?, is_connected = 1, updated_at = NOW()");
-$stmt->bind_param("ssss", $botToken, $chatId, $botToken, $chatId);
+
+// Check if record exists
+$result = $conn->query("SELECT id FROM telegram_config LIMIT 1");
+$existing = $result->fetch_assoc();
+
+if ($existing) {
+    // Update existing record
+    $stmt = $conn->prepare("UPDATE telegram_config SET bot_token = ?, chat_id = ?, is_connected = 1, last_test = NOW(), updated_at = NOW() WHERE id = ?");
+    $stmt->bind_param("ssi", $botToken, $chatId, $existing['id']);
+} else {
+    // Insert new record (first time setup)
+    $stmt = $conn->prepare("INSERT INTO telegram_config (bot_token, chat_id, is_connected, last_test) VALUES (?, ?, 1, NOW())");
+    $stmt->bind_param("ss", $botToken, $chatId);
+}
+
 $stmt->execute();
 
 $message = !empty($chatId) ? 'Connected to Telegram and test message sent!' : 'Bot token is valid!';
