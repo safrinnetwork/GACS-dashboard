@@ -2,7 +2,7 @@
 -- GACS Dashboard - Complete Database Schema
 -- ============================================================================
 -- Version: 1.0.0-beta (Universal)
--- Generated: October 14, 2025
+-- Generated: October 19, 2025
 -- Description: Unified database schema including all core and Telegram features
 --
 -- This file contains:
@@ -10,8 +10,10 @@
 -- 2. GenieACS, MikroTik, Telegram integration tables
 -- 3. Network topology map tables
 -- 4. PON configuration tables (Server, OLT, ODC, ODP, ONU)
--- 5. Device monitoring tables
+-- 5. Device monitoring tables (monitoring, MAC vendor cache)
 -- 6. Telegram bot tables (subscriptions, sessions, permissions, reports)
+--
+-- Total: 23 tables + 1 view
 -- ============================================================================
 --
 -- ⚠️ IMPORTANT INSTRUCTIONS:
@@ -237,6 +239,7 @@ CREATE TABLE IF NOT EXISTS `odc_config` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `map_item_id` int(11) NOT NULL,
   `olt_pon_port_id` int(11) DEFAULT NULL,
+  `server_id` int(11) DEFAULT NULL COMMENT 'Reference to parent Server for child ODCs',
   `server_pon_port` int(11) DEFAULT NULL,
   `port_count` int(11) NOT NULL,
   `parent_attenuation_db` decimal(5,2) DEFAULT 0.00,
@@ -297,6 +300,19 @@ COMMENT='ONU/ONT customer premises equipment configuration';
 -- ============================================================================
 -- SECTION 5: DEVICE MONITORING TABLES
 -- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- TABLE: mac_vendor_cache (MAC Address Vendor Lookup Cache)
+-- ----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `mac_vendor_cache` (
+  `oui` varchar(6) NOT NULL COMMENT 'First 6 characters of MAC address (OUI)',
+  `vendor_name` varchar(255) NOT NULL,
+  `cached_at` datetime NOT NULL,
+  PRIMARY KEY (`oui`),
+  KEY `idx_cached_at` (`cached_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Cache for MAC address vendor lookups to reduce API calls';
 
 -- ----------------------------------------------------------------------------
 -- TABLE: device_monitoring (Device Status Monitoring History)
@@ -602,6 +618,8 @@ WHERE tu.is_active = 1;
 -- 8. Setup cron jobs (device-monitor.php, webhook-monitor.php, backup.sh)
 --
 -- Version History:
--- v1.0.0-beta (2025-10-14) - Universal schema (no hardcoded database name)
+-- v1.0.0-beta (2025-10-19) - Universal schema (no hardcoded database name)
+--   - Added: mac_vendor_cache table for MAC address vendor lookups
+--   - Updated: odc_config with server_id column for child ODC support
 --
 -- ============================================================================
