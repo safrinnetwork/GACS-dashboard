@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Status](https://img.shields.io/badge/Status-Beta-yellow)
-![Version](https://img.shields.io/badge/Version-1.0.0--beta-blue)
+![Version](https://img.shields.io/badge/Version-1.1.0--beta-blue)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)
 ![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-orange)
 
