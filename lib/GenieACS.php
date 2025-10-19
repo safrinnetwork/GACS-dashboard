@@ -28,7 +28,8 @@ class GenieACS {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120); // Increased to 120 seconds for large datasets
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Connection timeout 10 seconds
 
         // Add authentication if provided
         if ($this->username && $this->password) {
@@ -78,10 +79,41 @@ class GenieACS {
 
     /**
      * Get all devices
+     * @param array $query - MongoDB query
+     * @param int $limit - Maximum number of devices to return (0 = no limit)
+     * @param int $skip - Number of devices to skip (for pagination)
      */
-    public function getDevices($query = []) {
-        $queryString = empty($query) ? '' : '?query=' . urlencode(json_encode($query));
+    public function getDevices($query = [], $limit = 0, $skip = 0) {
+        $params = [];
+
+        if (!empty($query)) {
+            $params[] = 'query=' . urlencode(json_encode($query));
+        }
+
+        if ($limit > 0) {
+            $params[] = 'limit=' . $limit;
+        }
+
+        if ($skip > 0) {
+            $params[] = 'skip=' . $skip;
+        }
+
+        $queryString = !empty($params) ? '?' . implode('&', $params) : '';
         return $this->request('/devices/' . $queryString);
+    }
+
+    /**
+     * Get total device count
+     */
+    public function getDeviceCount($query = []) {
+        $queryString = empty($query) ? '' : '?query=' . urlencode(json_encode($query));
+        $result = $this->request('/devices/' . $queryString);
+
+        if ($result['success'] && isset($result['data'])) {
+            return ['success' => true, 'count' => count($result['data'])];
+        }
+
+        return ['success' => false, 'count' => 0];
     }
 
     /**

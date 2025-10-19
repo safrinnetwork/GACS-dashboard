@@ -62,9 +62,9 @@ include __DIR__ . '/views/layouts/header.php';
                     </button>
                 </li>
             </ul>
-            <!-- Search Box -->
+            <!-- Search Box and Pagination Controls -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text">
                             <i class="bi bi-search"></i>
@@ -75,7 +75,19 @@ include __DIR__ . '/views/layouts/header.php';
                         </button>
                     </div>
                 </div>
-                <div class="col-md-6 text-end">
+                <div class="col-md-4 text-center">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <label class="me-2 mb-0" style="white-space: nowrap;">Show:</label>
+                        <select class="form-select form-select-sm" id="items-per-page" onchange="changeItemsPerPage()" style="width: auto;">
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="0">All</option>
+                        </select>
+                        <span class="ms-2 text-muted" style="white-space: nowrap;">per page</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
                     <span class="text-muted" id="device-count">Loading...</span>
                 </div>
             </div>
@@ -93,6 +105,39 @@ include __DIR__ . '/views/layouts/header.php';
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Pagination Navigation -->
+            <div class="row mt-3" id="pagination-container" style="display: none;">
+                <div class="col-12">
+                    <nav aria-label="Device pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" id="pagination-first">
+                                <button class="page-link" onclick="goToPage(1)">
+                                    <i class="bi bi-chevron-double-left"></i> First
+                                </button>
+                            </li>
+                            <li class="page-item" id="pagination-prev">
+                                <button class="page-link" onclick="goToPage(currentPage - 1)">
+                                    <i class="bi bi-chevron-left"></i> Prev
+                                </button>
+                            </li>
+                            <li class="page-item active">
+                                <span class="page-link" id="pagination-info">Page 1 of 1</span>
+                            </li>
+                            <li class="page-item" id="pagination-next">
+                                <button class="page-link" onclick="goToPage(currentPage + 1)">
+                                    Next <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </li>
+                            <li class="page-item" id="pagination-last">
+                                <button class="page-link" onclick="goToPage(Math.ceil(totalDevices / itemsPerPage))">
+                                    Last <i class="bi bi-chevron-double-right"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
@@ -161,10 +206,25 @@ let allMapItems = []; // Store map items
 let currentSortColumn = null;
 let currentSortDirection = 'asc';
 let currentFilterType = 'onu'; // Track current filter type (default: onu)
+let savedScrollPosition = 0; // Store scroll position for auto-refresh
 
-async function loadDevices() {
+// Pagination variables
+let currentPage = 1;
+let itemsPerPage = 20; // Default: 20 items per page
+let totalDevices = 0;
+
+async function loadDevices(isAutoRefresh = false) {
+    // Save scroll position before refresh (for auto-refresh)
+    if (isAutoRefresh) {
+        savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    }
+
     const tbody = document.getElementById('devices-tbody');
-    tbody.innerHTML = '<tr><td colspan="12" class="text-center"><div class="spinner"></div></td></tr>';
+
+    // Don't show spinner on auto-refresh to avoid flickering
+    if (!isAutoRefresh) {
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center"><div class="spinner"></div></td></tr>';
+    }
 
     // Load devices, map counts, and map items in parallel
     const [devicesResult, mapCountsResult, mapItemsResult] = await Promise.all([
@@ -189,33 +249,69 @@ async function loadDevices() {
             return;
         }
 
-        // Reset sort state
-        currentSortColumn = null;
-        currentSortDirection = 'asc';
-        resetSortIcons();
+        // Only reset sort state on manual refresh, maintain on auto-refresh
+        if (!isAutoRefresh) {
+            currentSortColumn = null;
+            currentSortDirection = 'asc';
+            resetSortIcons();
 
-        // Generate initial table header for "ONU" tab (default)
-        generateTableHeader('onu');
+            // Generate initial table header for "ONU" tab (default)
+            generateTableHeader('onu');
 
-        // Filter and render ONU devices by default
-        const onuDevices = allDevices.filter(device => {
-            const productClass = (device.product_class || '').toLowerCase();
-            return productClass.includes('f609') || productClass.includes('f660') ||
-                   productClass.includes('gm219') || productClass.includes('xpon') ||
-                   productClass.includes('ont') || productClass.includes('onu');
-        });
-        renderDevices(onuDevices);
-        updateDeviceCount(onuDevices.length, onuDevices.length);
-        updateDeviceStats(allDevices);
+            // Update search placeholder for ONU tab (default)
+            updateSearchPlaceholder('onu');
+        }
 
-        // Update search placeholder for ONU tab (default)
-        updateSearchPlaceholder('onu');
+        // Re-apply current filter and sorting
+        if (currentFilterType === 'onu') {
+            // Show ALL devices from GenieACS (no filtering by product_class)
+            let devicesToRender = allDevices;
+
+            // Re-apply search filter if active
+            const searchTerm = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
+            if (searchTerm !== '') {
+                devicesToRender = allDevices.filter(device => {
+                    const serialNumber = (device.serial_number || '').toLowerCase();
+                    const macAddress = (device.mac_address || '').toLowerCase();
+                    return serialNumber.includes(searchTerm) || macAddress.includes(searchTerm);
+                });
+            }
+
+            // Re-apply sorting if active
+            if (currentSortColumn) {
+                devicesToRender = applySorting(devicesToRender, currentSortColumn, currentSortDirection);
+            }
+
+            renderDevices(devicesToRender);
+            updateDeviceCount(devicesToRender.length, allDevices.length);
+            updateDeviceStats(allDevices);
+        } else {
+            // For infrastructure tabs, re-render map items
+            renderMapItems(currentFilterType);
+            updateDeviceStats([], false);
+        }
 
         // Update tab counts using map data
         if (mapCountsResult && mapCountsResult.success) {
             updateDeviceTypeCountsFromMap(allDevices, mapCountsResult.counts);
         } else {
             updateDeviceTypeCountsFromMap(allDevices, {});
+        }
+
+        // Restore scroll position and sort icons after auto-refresh
+        if (isAutoRefresh) {
+            if (savedScrollPosition > 0) {
+                setTimeout(() => {
+                    window.scrollTo(0, savedScrollPosition);
+                }, 100); // Small delay to ensure DOM is updated
+            }
+
+            // Restore sort icons if sorting is active
+            if (currentSortColumn) {
+                setTimeout(() => {
+                    updateSortIcons(currentSortColumn, currentSortDirection);
+                }, 50);
+            }
         }
     } else {
         tbody.innerHTML = '<tr><td colspan="12" class="text-center text-danger">Failed to load devices</td></tr>';
@@ -239,32 +335,59 @@ async function renderDevices(devices) {
             return;
         }
         tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No devices found</td></tr>`;
+        updatePaginationUI(0);
         return;
     }
 
-    // Fetch map status for all devices in parallel
-    const mapStatusPromises = devices.map(device =>
-        fetchAPI('/api/get-onu-location.php?serial_number=' + encodeURIComponent(device.serial_number))
-            .then(result => ({
-                serial: device.serial_number,
-                inMap: result && result.success && result.location && result.location.found,
-                itemType: result?.location?.item_type || 'onu',
-                itemId: result?.location?.onu?.id || result?.location?.server?.id || null
-            }))
-            .catch(() => ({ serial: device.serial_number, inMap: false, itemType: 'onu', itemId: null }))
-    );
+    // Store total for pagination
+    totalDevices = devices.length;
 
-    const mapStatuses = await Promise.all(mapStatusPromises);
-    const mapStatusMap = {};
-    mapStatuses.forEach(status => {
-        mapStatusMap[status.serial] = {
-            inMap: status.inMap,
-            itemType: status.itemType,
-            itemId: status.itemId
-        };
-    });
+    // Apply pagination (slice devices array)
+    let devicesToRender = devices;
+    if (itemsPerPage > 0) {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        devicesToRender = devices.slice(startIndex, endIndex);
+    }
 
-    devices.forEach(device => {
+    // Update pagination UI
+    updatePaginationUI(totalDevices);
+
+    // Fetch map status for all devices on current page using BATCH API
+    const serialNumbers = devicesToRender.map(device => device.serial_number);
+
+    let mapStatusMap = {};
+
+    try {
+        const batchResult = await fetchAPI('/api/get-onu-location-batch.php', {
+            method: 'POST',
+            body: JSON.stringify({ serial_numbers: serialNumbers })
+        });
+
+        if (batchResult && batchResult.success && batchResult.locations) {
+            // Convert batch result to map status format
+            Object.keys(batchResult.locations).forEach(serial => {
+                const location = batchResult.locations[serial];
+                mapStatusMap[serial] = {
+                    inMap: location.found || false,
+                    itemType: location.item_type || 'onu',
+                    itemId: location.onu?.id || location.server?.id || null
+                };
+            });
+        }
+    } catch (error) {
+        console.error('Batch map status fetch failed:', error);
+        // Fallback: all devices marked as not in map
+        devicesToRender.forEach(device => {
+            mapStatusMap[device.serial_number] = {
+                inMap: false,
+                itemType: 'onu',
+                itemId: null
+            };
+        });
+    }
+
+    devicesToRender.forEach(device => {
         const row = document.createElement('tr');
         const ipAddress = extractIP(device.ip_tr069);
         const mapInfo = mapStatusMap[device.serial_number] || { inMap: false, itemType: 'onu', itemId: null };
@@ -424,7 +547,13 @@ function renderMapItems(itemType) {
 
 function updateDeviceCount(shown, total) {
     const countElement = document.getElementById('device-count');
-    if (shown === total) {
+
+    // If using pagination, show range
+    if (itemsPerPage > 0 && total > itemsPerPage) {
+        const startIndex = (currentPage - 1) * itemsPerPage + 1;
+        const endIndex = Math.min(currentPage * itemsPerPage, total);
+        countElement.textContent = `Showing ${startIndex}-${endIndex} of ${total} item${total !== 1 ? 's' : ''}`;
+    } else if (shown === total) {
         countElement.textContent = `Showing ${total} item${total !== 1 ? 's' : ''}`;
     } else {
         countElement.textContent = `Showing ${shown} of ${total} item${total !== 1 ? 's' : ''}`;
@@ -452,19 +581,11 @@ function updateDeviceStats(devices, showStats = true) {
 
 // Update device type counts in tab badges using map data
 function updateDeviceTypeCountsFromMap(devices, mapCounts) {
-    // Count ONU from devices (by product_class)
-    let onuCount = 0;
-    devices.forEach(device => {
-        const productClass = (device.product_class || '').toLowerCase();
-        if (productClass.includes('f609') || productClass.includes('f660') ||
-            productClass.includes('gm219') || productClass.includes('xpon') ||
-            productClass.includes('ont') || productClass.includes('onu')) {
-            onuCount++;
-        }
-    });
+    // Count ALL devices from GenieACS (no filtering by product_class)
+    const onuCount = devices.length;
 
     const counts = {
-        onu: onuCount, // From devices product_class
+        onu: onuCount, // From all devices in GenieACS
         odp: mapCounts.odp || 0, // From map
         odc: mapCounts.odc || 0, // From map
         olt: mapCounts.olt || 0, // From map
@@ -550,17 +671,11 @@ function filterByType(type) {
     resetSortIcons();
 
     if (type === 'onu') {
-        // For ONU: filter by product_class (all ONU devices, not only registered in map)
-        const filteredDevices = allDevices.filter(device => {
-            const productClass = (device.product_class || '').toLowerCase();
-            return productClass.includes('f609') || productClass.includes('f660') ||
-                   productClass.includes('gm219') || productClass.includes('xpon') ||
-                   productClass.includes('ont') || productClass.includes('onu');
-        });
-        renderDevices(filteredDevices);
-        updateDeviceCount(filteredDevices.length, allDevices.length);
+        // For ONU: show ALL devices from GenieACS (no filtering by product_class)
+        renderDevices(allDevices);
+        updateDeviceCount(allDevices.length, allDevices.length);
         // Show stats for ONU tab
-        updateDeviceStats(filteredDevices, true);
+        updateDeviceStats(allDevices, true);
     } else {
         // For ODP, ODC, OLT, Server: show map items
         renderMapItems(type);
@@ -592,13 +707,8 @@ function filterDevices() {
     // Get devices based on current tab
     let baseDevices = allDevices;
     if (currentFilterType === 'onu') {
-        // For ONU: filter by product_class (all ONU devices, not only registered in map)
-        baseDevices = allDevices.filter(device => {
-            const productClass = (device.product_class || '').toLowerCase();
-            return productClass.includes('f609') || productClass.includes('f660') ||
-                   productClass.includes('gm219') || productClass.includes('xpon') ||
-                   productClass.includes('ont') || productClass.includes('onu');
-        });
+        // For ONU: show ALL devices from GenieACS (no filtering)
+        baseDevices = allDevices;
     } else {
         // For ODP, ODC, OLT, Server: use map data
         const mapItemDeviceIds = new Set();
@@ -731,26 +841,11 @@ function clearSearch() {
     filterDevices();
 }
 
-// Sorting functionality
-function sortTable(column) {
-    // Toggle sort direction if clicking same column
-    if (currentSortColumn === column) {
-        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        currentSortColumn = column;
-        currentSortDirection = 'asc';
-    }
+// Apply sorting to devices array (helper function for auto-refresh)
+function applySorting(devices, column, direction) {
+    const sortedDevices = [...devices];
 
-    // Get current filtered devices (in case search is active)
-    const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
-    let devicesToSort = searchTerm === '' ? [...allDevices] : allDevices.filter(device => {
-        const serialNumber = (device.serial_number || '').toLowerCase();
-        const macAddress = (device.mac_address || '').toLowerCase();
-        return serialNumber.includes(searchTerm) || macAddress.includes(searchTerm);
-    });
-
-    // Sort devices
-    devicesToSort.sort((a, b) => {
+    sortedDevices.sort((a, b) => {
         let valueA, valueB;
 
         switch (column) {
@@ -797,8 +892,32 @@ function sortTable(column) {
         if (valueA > valueB) comparison = 1;
         if (valueA < valueB) comparison = -1;
 
-        return currentSortDirection === 'asc' ? comparison : -comparison;
+        return direction === 'asc' ? comparison : -comparison;
     });
+
+    return sortedDevices;
+}
+
+// Sorting functionality
+function sortTable(column) {
+    // Toggle sort direction if clicking same column
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+
+    // Get current filtered devices (in case search is active)
+    const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+    let devicesToSort = searchTerm === '' ? [...allDevices] : allDevices.filter(device => {
+        const serialNumber = (device.serial_number || '').toLowerCase();
+        const macAddress = (device.mac_address || '').toLowerCase();
+        return serialNumber.includes(searchTerm) || macAddress.includes(searchTerm);
+    });
+
+    // Use helper function to sort
+    devicesToSort = applySorting(devicesToSort, column, currentSortDirection);
 
     renderDevices(devicesToSort);
     updateSortIcons(column, currentSortDirection);
@@ -881,11 +1000,99 @@ async function confirmSummon() {
     currentSummonDeviceId = null;
 }
 
+// Pagination functions
+function updatePaginationUI(total) {
+    const paginationContainer = document.getElementById('pagination-container');
+    const paginationInfo = document.getElementById('pagination-info');
+    const paginationFirst = document.getElementById('pagination-first');
+    const paginationPrev = document.getElementById('pagination-prev');
+    const paginationNext = document.getElementById('pagination-next');
+    const paginationLast = document.getElementById('pagination-last');
+
+    // Hide pagination if showing all or no items
+    if (itemsPerPage === 0 || total === 0) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+
+    const totalPages = Math.ceil(total / itemsPerPage);
+
+    // Show pagination only if more than 1 page
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+
+    paginationContainer.style.display = 'block';
+
+    // Update page info
+    paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+    // Update button states
+    if (currentPage <= 1) {
+        paginationFirst.classList.add('disabled');
+        paginationPrev.classList.add('disabled');
+    } else {
+        paginationFirst.classList.remove('disabled');
+        paginationPrev.classList.remove('disabled');
+    }
+
+    if (currentPage >= totalPages) {
+        paginationNext.classList.add('disabled');
+        paginationLast.classList.add('disabled');
+    } else {
+        paginationNext.classList.remove('disabled');
+        paginationLast.classList.remove('disabled');
+    }
+}
+
+function goToPage(page) {
+    const totalPages = Math.ceil(totalDevices / itemsPerPage);
+
+    if (page < 1 || page > totalPages) return;
+    if (page === currentPage) return;
+
+    currentPage = page;
+
+    // Re-render devices with new page
+    filterByType(currentFilterType);
+
+    // Scroll to top of table
+    document.getElementById('devices-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changeItemsPerPage() {
+    const selector = document.getElementById('items-per-page');
+    itemsPerPage = parseInt(selector.value);
+
+    // Reset to page 1 when changing items per page
+    currentPage = 1;
+
+    // Re-render devices
+    filterByType(currentFilterType);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     <?php if ($genieacsConfigured): ?>
-        loadDevices();
-        setInterval(loadDevices, 60000); // Refresh every 60 seconds
+        loadDevices(); // Initial load (manual)
+        setInterval(() => loadDevices(true), 60000); // Auto-refresh every 60 seconds
     <?php endif; ?>
+
+    // Keyboard shortcuts for pagination (Left/Right arrow keys)
+    document.addEventListener('keydown', function(e) {
+        // Only work if not typing in input field
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+            return;
+        }
+
+        const totalPages = Math.ceil(totalDevices / itemsPerPage);
+
+        if (e.key === 'ArrowLeft' && currentPage > 1) {
+            goToPage(currentPage - 1);
+        } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+            goToPage(currentPage + 1);
+        }
+    });
 });
 </script>
 
