@@ -314,18 +314,22 @@ foreach ($checks as $check) {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-img {
+            width: 120px;
+            height: auto;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
         .card-header h1 {
             font-size: 2rem;
             font-weight: 600;
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .card-header h1 i {
-            color: var(--primary-color);
         }
 
         .card-header p {
@@ -363,15 +367,16 @@ foreach ($checks as $check) {
         }
 
         .btn-primary {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
             border: none;
             color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
         .btn-primary:hover {
-            background: var(--primary-dark);
+            background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
             color: white;
         }
 
@@ -457,9 +462,10 @@ foreach ($checks as $check) {
         .command-box pre {
             margin: 0;
             color: #22D3EE;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            white-space: pre;
+            overflow-x: auto;
             font-size: 0.9rem;
+            line-height: 1.6;
         }
 
         .copy-btn {
@@ -565,7 +571,10 @@ foreach ($checks as $check) {
     <div class="container">
         <div class="setup-card">
             <div class="card-header">
-                <h1><i class="bi bi-gear-fill"></i> GACS Dashboard Setup</h1>
+                <div class="logo-container">
+                    <img src="assets/img/logo.png" alt="GACS Logo" class="logo-img">
+                </div>
+                <h1>GACS Dashboard Setup</h1>
                 <p>Initial Configuration & System Check</p>
                 <?php if ($isAuthenticated): ?>
                     <a href="?logout" class="logout-link"><i class="bi bi-box-arrow-right"></i> Logout</a>
@@ -650,11 +659,10 @@ foreach ($checks as $check) {
 
                                 <?php if (isset($check['action']) && $check['action'] === 'install'): ?>
                                     <div class="command-box mt-3">
-                                        <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('composer-install')">
+                                        <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('composer-install', event)">
                                             <i class="bi bi-clipboard"></i> Copy
                                         </button>
-                                        <pre id="composer-install">cd <?php echo $rootPath; ?>
-composer install</pre>
+                                        <pre id="composer-install">cd <?php echo $rootPath; ?>&#10;composer install</pre>
                                     </div>
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle"></i> Jalankan perintah di atas melalui SSH/Terminal untuk menginstall dependencies
@@ -672,11 +680,10 @@ composer install</pre>
                             <?php if (!$composerInstalled && $composerJsonExists): ?>
                                 <p><strong>1. Install Composer Dependencies:</strong></p>
                                 <div class="command-box">
-                                    <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('cmd1')">
+                                    <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('cmd1', event)">
                                         <i class="bi bi-clipboard"></i> Copy
                                     </button>
-                                    <pre id="cmd1">cd <?php echo $rootPath; ?>
-composer install</pre>
+                                    <pre id="cmd1">cd <?php echo $rootPath; ?>&#10;composer install</pre>
                                 </div>
                             <?php endif; ?>
 
@@ -691,12 +698,14 @@ composer install</pre>
                             <?php if ($databaseConfigured && !$dbConnectionTest): ?>
                                 <p><strong>3. Import Database Schema:</strong></p>
                                 <div class="command-box">
-                                    <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('cmd2')">
+                                    <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('cmd2', event)">
                                         <i class="bi bi-clipboard"></i> Copy
                                     </button>
-                                    <pre id="cmd2">mysql -u [username] -p [database_name] < <?php echo $rootPath; ?>/database.sql</pre>
+                                    <pre id="cmd2">cd <?php echo $rootPath; ?>&#10;mysql -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p<?php echo defined('DB_PASS') ? DB_PASS : '[password]'; ?> -D <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql&#10;&#10;# Atau gunakan mariadb:&#10;mariadb -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p<?php echo defined('DB_PASS') ? DB_PASS : '[password]'; ?> -D <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql</pre>
                                 </div>
-                                <small class="text-muted">Ganti [username] dan [database_name] dengan credentials Anda</small>
+                                <div class="alert alert-danger mt-2 mb-0" style="font-size: 0.85rem;">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> <strong>Perhatian:</strong> Password ditampilkan untuk kemudahan setup. <strong>Hapus file init.php setelah instalasi selesai!</strong>
+                                </div>
                             <?php endif; ?>
 
                             <?php if ($dbConnectionTest && !$databaseTablesImported): ?>
@@ -707,18 +716,14 @@ composer install</pre>
                                     Tables ditemukan: <strong><?php echo $tableCount; ?> / 24</strong>
                                 </div>
                                 <div class="command-box">
-                                    <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('cmd3')">
+                                    <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('cmd3', event)">
                                         <i class="bi bi-clipboard"></i> Copy
                                     </button>
-                                    <pre id="cmd3">cd <?php echo $rootPath; ?>
-mysql -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql
-
-# Atau gunakan mariadb:
-mariadb -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql</pre>
+                                    <pre id="cmd3">cd <?php echo $rootPath; ?>&#10;mysql -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p<?php echo defined('DB_PASS') ? DB_PASS : '[password]'; ?> -D <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql&#10;&#10;# Atau gunakan mariadb:&#10;mariadb -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p<?php echo defined('DB_PASS') ? DB_PASS : '[password]'; ?> -D <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql</pre>
                                 </div>
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> Anda akan diminta password database setelah menjalankan command di atas
-                                </small>
+                                <div class="alert alert-danger mt-2 mb-0" style="font-size: 0.85rem;">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> <strong>Perhatian:</strong> Password ditampilkan untuk kemudahan setup. <strong>Hapus file init.php setelah instalasi selesai!</strong>
+                                </div>
                             <?php endif; ?>
 
                             <p class="mt-3"><strong>4. Refresh halaman ini setelah menyelesaikan langkah-langkah di atas.</strong></p>
@@ -766,7 +771,7 @@ mariadb -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p <?php e
     </div>
 
     <script>
-        function copyCommand(elementId) {
+        function copyCommand(elementId, event) {
             const element = document.getElementById(elementId);
             const text = element.textContent;
 
