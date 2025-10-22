@@ -1,27 +1,46 @@
 <?php
 /**
+ * ============================================================================
  * GACS Dashboard - Initial Setup Wizard
- * Standalone installer that checks and configures the system
+ * ============================================================================
+ * Standalone PHP installer that checks and configures the system
+ * This file is independent and does NOT require Composer dependencies
+ *
+ * @version 1.1.0
+ * @author Mostech
+ * ============================================================================
  */
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
 
 // Start session for authentication
 session_start();
 
-// Configuration
+// Setup credentials (default, same as main application)
 define('INIT_USER', 'user1234');
 define('INIT_PASS', 'mostech');
 
-// Get current directory path
+// Get application root path
 $rootPath = __DIR__;
 
-// Handle logout
+// ============================================================================
+// AUTHENTICATION HANDLERS
+// ============================================================================
+
+/**
+ * Handle logout request
+ */
 if (isset($_GET['logout'])) {
     unset($_SESSION['init_authenticated']);
     header('Location: init.php');
     exit;
 }
 
-// Handle login
+/**
+ * Handle login submission
+ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -35,15 +54,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     }
 }
 
-// Check authentication
+/**
+ * Check if user is authenticated
+ */
 $isAuthenticated = isset($_SESSION['init_authenticated']) && $_SESSION['init_authenticated'] === true;
 
-// Check system status
-$checks = [];
+// ============================================================================
+// SYSTEM CHECKS
+// ============================================================================
 
-// 1. Check if composer is installed in root folder
+/**
+ * Initialize checks array
+ */
+$checks = [];
+$dbError = null;
+
+// ============================================================================
+// CHECK 1: Composer Dependencies
+// ============================================================================
+
 $composerInstalled = file_exists($rootPath . '/vendor/autoload.php');
 $composerJsonExists = file_exists($rootPath . '/composer.json');
+
 $checks['composer'] = [
     'status' => $composerInstalled,
     'label' => 'Composer Dependencies',
@@ -51,7 +83,10 @@ $checks['composer'] = [
     'action' => !$composerInstalled && $composerJsonExists ? 'install' : null
 ];
 
-// 2. Check config directory and files
+// ============================================================================
+// CHECK 2: Configuration Files
+// ============================================================================
+
 $configDirExists = is_dir($rootPath . '/config');
 $configPhpExists = file_exists($rootPath . '/config/config.php');
 $databasePhpExists = file_exists($rootPath . '/config/database.php');
@@ -74,21 +109,27 @@ $checks['database_php'] = [
     'message' => $databasePhpExists ? 'File database.php ditemukan' : 'File database.php tidak ditemukan'
 ];
 
-// 3. Check if database is configured
+// ============================================================================
+// CHECK 3: Database Configuration & Connection
+// ============================================================================
+
 $databaseConfigured = false;
 $dbConnectionTest = false;
+
 if ($databasePhpExists) {
     $dbConfigContent = file_get_contents($rootPath . '/config/database.php');
-    // Check if it's not using default example values
+
+    // Check if database credentials have been configured (not using default example values)
     if (strpos($dbConfigContent, 'your_database') === false &&
         strpos($dbConfigContent, 'your_username') === false) {
         $databaseConfigured = true;
 
-        // Try to test database connection
+        // Test database connection (only if authenticated)
         if ($isAuthenticated) {
             try {
                 require_once $rootPath . '/config/database.php';
                 $testConn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+
                 if ($testConn->connect_error) {
                     $dbConnectionTest = false;
                     $dbError = $testConn->connect_error;
@@ -114,19 +155,92 @@ if ($databaseConfigured && $isAuthenticated) {
     $checks['database_connection'] = [
         'status' => $dbConnectionTest,
         'label' => 'Database Connection Test',
-        'message' => $dbConnectionTest ? 'Koneksi database berhasil' : 'Koneksi database gagal: ' . ($dbError ?? 'Unknown error')
+        'message' => $dbConnectionTest
+            ? 'Koneksi database berhasil'
+            : 'Koneksi database gagal: ' . ($dbError ?? 'Unknown error')
     ];
 }
 
-// 4. Check if database.sql exists
+// ============================================================================
+// CHECK 4: Database Schema File
+// ============================================================================
+
 $databaseSqlExists = file_exists($rootPath . '/database.sql');
+
 $checks['database_sql'] = [
     'status' => $databaseSqlExists,
     'label' => 'Database Schema File',
     'message' => $databaseSqlExists ? 'File database.sql ditemukan' : 'File database.sql tidak ditemukan'
 ];
 
-// Calculate overall status
+// ============================================================================
+// CHECK 5: Database Tables Import Status
+// ============================================================================
+
+$databaseTablesImported = false;
+$tableCount = 0;
+$expectedTables = ['users', 'configurations', 'genieacs_credentials', 'mikrotik_credentials', 'telegram_config'];
+$missingTables = [];
+
+if ($dbConnectionTest && $isAuthenticated) {
+    try {
+        require_once $rootPath . '/config/database.php';
+        $testConn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+
+        if (!$testConn->connect_error) {
+            // Count total tables
+            $result = $testConn->query("SHOW TABLES");
+            if ($result) {
+                $tableCount = $result->num_rows;
+
+                // Check if critical tables exist
+                $allCriticalTablesExist = true;
+                foreach ($expectedTables as $table) {
+                    $checkTable = $testConn->query("SHOW TABLES LIKE '$table'");
+                    if ($checkTable->num_rows === 0) {
+                        $allCriticalTablesExist = false;
+                        $missingTables[] = $table;
+                    }
+                }
+
+                // Consider imported if all critical tables exist and at least 20 tables total
+                $databaseTablesImported = $allCriticalTablesExist && $tableCount >= 20;
+            }
+            $testConn->close();
+        }
+    } catch (Exception $e) {
+        $databaseTablesImported = false;
+    }
+}
+
+// Build message for database tables check
+$tableCheckMessage = 'Koneksi database diperlukan untuk pengecekan';
+if ($dbConnectionTest) {
+    if ($databaseTablesImported) {
+        $tableCheckMessage = "Database schema sudah diimport ($tableCount tables)";
+    } elseif ($tableCount > 0) {
+        $tableCheckMessage = "Database tidak lengkap ($tableCount/24 tables)";
+        if (!empty($missingTables)) {
+            $tableCheckMessage .= ". Missing: " . implode(', ', array_slice($missingTables, 0, 3));
+            if (count($missingTables) > 3) {
+                $tableCheckMessage .= " (+" . (count($missingTables) - 3) . " more)";
+            }
+        }
+    } else {
+        $tableCheckMessage = 'Database masih kosong, belum diimport';
+    }
+}
+
+$checks['database_tables'] = [
+    'status' => $databaseTablesImported,
+    'label' => 'Database Tables Imported',
+    'message' => $tableCheckMessage
+];
+
+// ============================================================================
+// CALCULATE OVERALL STATUS
+// ============================================================================
+
 $allChecksPass = true;
 foreach ($checks as $check) {
     if (!$check['status']) {
@@ -583,6 +697,28 @@ composer install</pre>
                                     <pre id="cmd2">mysql -u [username] -p [database_name] < <?php echo $rootPath; ?>/database.sql</pre>
                                 </div>
                                 <small class="text-muted">Ganti [username] dan [database_name] dengan credentials Anda</small>
+                            <?php endif; ?>
+
+                            <?php if ($dbConnectionTest && !$databaseTablesImported): ?>
+                                <p><strong>3. Import Database Schema:</strong></p>
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-circle"></i> <strong>Database kosong atau tidak lengkap!</strong><br>
+                                    Koneksi database berhasil, namun tables belum diimport atau tidak lengkap.<br>
+                                    Tables ditemukan: <strong><?php echo $tableCount; ?> / 24</strong>
+                                </div>
+                                <div class="command-box">
+                                    <button class="btn btn-sm btn-success copy-btn" onclick="copyCommand('cmd3')">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                    <pre id="cmd3">cd <?php echo $rootPath; ?>
+mysql -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql
+
+# Atau gunakan mariadb:
+mariadb -u <?php echo defined('DB_USER') ? DB_USER : '[username]'; ?> -p <?php echo defined('DB_NAME') ? DB_NAME : '[database]'; ?> < database.sql</pre>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Anda akan diminta password database setelah menjalankan command di atas
+                                </small>
                             <?php endif; ?>
 
                             <p class="mt-3"><strong>4. Refresh halaman ini setelah menyelesaikan langkah-langkah di atas.</strong></p>
