@@ -37,10 +37,11 @@ $genieacs = new GenieACS(
     $credentials['password']
 );
 
-$result = $genieacs->summonDevice($deviceId);
+// Use the new method that summons device AND fetches admin credentials
+$result = $genieacs->summonAndFetchAdminCredentials($deviceId);
 
 if ($result['success']) {
-    jsonResponse(['success' => true, 'message' => 'Device summon berhasil']);
+    jsonResponse(['success' => true, 'message' => 'Device summon berhasil dan admin credentials sedang diambil...']);
 } else {
     $errorMsg = 'Gagal summon device';
     if (isset($result['error'])) {

@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 
+// Increase timeout for large dataset
+set_time_limit(20);
+
 header('Content-Type: application/json');
 requireLogin();
 
@@ -19,6 +22,7 @@ if (!$credentials) {
 }
 
 use App\GenieACS;
+use App\GenieACS_Fast;
 
 $genieacs = new GenieACS(
     $credentials['host'],
@@ -40,52 +44,17 @@ $fair = 0;      // -25 to -28 dBm
 $poor = 0;      // < -28 dBm
 $noSignal = 0;  // No data
 
+// Use fast parser for better performance
 foreach ($devicesResult['data'] as $device) {
-    $rxPower = null;
-
-    // Try multiple paths for RX Power (priority order)
-    $paths = [
-        'VirtualParameters.RXPower',  // Already in dBm format
-        'InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.RXPower',  // Raw value
-        'InternetGatewayDevice.WANDevice.1.X_CT-COM_WANPONInterfaceConfig.RXPower',
-        'Device.Optical.Interface.1.RxPower',
-        'InternetGatewayDevice.X_BROADCOM_COM_OpticalInterfacePower'
-    ];
-
-    foreach ($paths as $path) {
-        $keys = explode('.', $path);
-        $value = $device;
-
-        foreach ($keys as $key) {
-            if (isset($value[$key])) {
-                $value = $value[$key];
-            } else {
-                $value = null;
-                break;
-            }
-        }
-
-        // Extract value from GenieACS format
-        if (is_array($value) && isset($value['_value'])) {
-            $rxPower = $value['_value'];
-            break;
-        } elseif (!is_array($value) && $value !== null) {
-            $rxPower = $value;
-            break;
-        }
-    }
+    // Extract RX power directly using fast method
+    $parsed = GenieACS_Fast::parseDeviceDataFast($device);
+    $rxPower = $parsed['rx_power'];
 
     // Categorize by signal strength
-    if ($rxPower === null || $rxPower === 'N/A' || $rxPower === '') {
+    if ($rxPower === 'N/A' || $rxPower === '' || $rxPower === null) {
         $noSignal++;
     } else {
         $rxPower = floatval($rxPower);
-
-        // Convert raw value to dBm if needed (raw value > 100 indicates non-dBm format)
-        // Formula: dBm = (raw_value / 100) - 40 (typical for EPON devices)
-        if ($rxPower > 100) {
-            $rxPower = ($rxPower / 100) - 40;
-        }
 
         if ($rxPower > -20) {
             $excellent++;

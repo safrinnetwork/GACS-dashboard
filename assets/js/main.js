@@ -24,14 +24,22 @@ function showToast(message, type = 'info', duration = 3000) {
 // AJAX Helper
 async function fetchAPI(url, options = {}) {
     try {
+        // Add timeout support (default 15 seconds)
+        const timeout = options.timeout || 15000;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
         const response = await fetch(url, {
             ...options,
+            signal: controller.signal,
             credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers
             }
         });
+
+        clearTimeout(timeoutId);
 
         // Check if response is OK
         if (!response.ok) {
@@ -56,19 +64,22 @@ async function fetchAPI(url, options = {}) {
             return null;
         }
     } catch (error) {
-        // Check if error is due to abort (user navigated away)
+        // Check if error is due to abort (timeout or user navigated away)
         if (error.name === 'AbortError') {
-            // Silently ignore abort errors (normal behavior when navigating)
+            // Log but don't show toast for timeout/abort (will be handled by calling code)
             console.debug('Request aborted for', url);
-            return null;
+            return { success: false, error: 'timeout', message: 'Request timeout' };
         }
 
         // Log other fetch errors
         console.error('Fetch error for', url, ':', error);
 
         // Only show toast for non-abort errors
-        showToast('Terjadi kesalahan koneksi: ' + error.message, 'danger');
-        return null;
+        if (!url.includes('/api/get-hotspot-traffic.php')) {
+            // Don't show toast for hotspot API errors (handled separately)
+            showToast('Terjadi kesalahan koneksi: ' + error.message, 'danger');
+        }
+        return { success: false, error: error.name, message: error.message };
     }
 }
 

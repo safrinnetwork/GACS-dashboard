@@ -1,8 +1,13 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+
+// Increase timeout for large dataset
+set_time_limit(20);
+
 requireLogin();
 
 use App\GenieACS;
+use App\GenieACS_Fast;
 
 header('Content-Type: application/json');
 
@@ -46,9 +51,9 @@ try {
     $devices = $result['data'];
     $recentDevices = [];
 
-    // Parse and sort by last inform time
+    // Parse and sort by last inform time (use fast parser for performance)
     foreach ($devices as $device) {
-        $parsed = $genieacs->parseDeviceData($device);
+        $parsed = GenieACS_Fast::parseDeviceDataFast($device);
 
         // Add last inform timestamp for sorting
         if (isset($device['_lastInform'])) {

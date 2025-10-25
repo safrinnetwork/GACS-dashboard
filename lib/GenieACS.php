@@ -28,8 +28,8 @@ class GenieACS {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 120); // Increased to 120 seconds for large datasets
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Connection timeout 10 seconds
+        curl_setopt($ch, CURLOPT_TIMEOUT, 300); // Increased to 300 seconds (5 minutes) for large datasets (400+ devices)
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // Connection timeout 30 seconds
 
         // Add authentication if provided
         if ($this->username && $this->password) {
@@ -161,6 +161,80 @@ class GenieACS {
         $encodedId = rawurlencode($deviceId);
         $endpoint = "/devices/{$encodedId}/tasks?connection_request";
         return $this->request($endpoint, 'POST');
+    }
+
+    /**
+     * Refresh device inform (force device to connect to ACS)
+     */
+    public function refreshInform($deviceId) {
+        $encodedId = rawurlencode($deviceId);
+        $endpoint = "/devices/{$encodedId}/tasks?connection_request";
+        return $this->request($endpoint, 'POST');
+    }
+
+    /**
+     * Add refresh task for specific parameter
+     * This forces GenieACS to fetch the parameter value from device
+     */
+    public function addRefreshTask($deviceId, $parameterPath) {
+        $encodedId = rawurlencode($deviceId);
+        $endpoint = "/devices/{$encodedId}/tasks?timeout=3000&connection_request";
+
+        $data = [
+            'name' => 'refreshObject',
+            'objectName' => $parameterPath
+        ];
+
+        return $this->request($endpoint, 'POST', $data);
+    }
+
+    /**
+     * Get parameter values from device (force fetch from device)
+     * This creates a task to fetch specific parameters from the device
+     *
+     * @param string $deviceId Device ID
+     * @param array $parameterNames Array of parameter names to fetch
+     * @param int $timeout Timeout in milliseconds (default: 3000)
+     * @return array Response with task ID
+     */
+    public function getParameterValues($deviceId, $parameterNames, $timeout = 3000) {
+        $encodedId = rawurlencode($deviceId);
+        $endpoint = "/devices/{$encodedId}/tasks?timeout={$timeout}&connection_request";
+
+        $data = [
+            'name' => 'getParameterValues',
+            'parameterNames' => $parameterNames
+        ];
+
+        return $this->request($endpoint, 'POST', $data);
+    }
+
+    /**
+     * Summon device and fetch admin credentials (VirtualParameters)
+     * This is a convenience method that:
+     * 1. Summons the device (connection request)
+     * 2. Refreshes all VirtualParameters so GenieACS evaluates superAdmin/superPassword
+     *
+     * VirtualParameters are computed by GenieACS from actual device parameters.
+     * Refreshing the VirtualParameters object triggers evaluation of ALL VirtualParameters,
+     * including superAdmin and superPassword which read admin credentials from various device parameters.
+     *
+     * @param string $deviceId Device ID
+     * @return array Response with success status
+     */
+    public function summonAndFetchAdminCredentials($deviceId) {
+        $encodedId = rawurlencode($deviceId);
+
+        // Connection request + Refresh VirtualParameters object
+        $endpoint = "/devices/{$encodedId}/tasks?timeout=3000&connection_request";
+
+        // Refresh all VirtualParameters - this triggers evaluation of superAdmin/superPassword
+        $data = [
+            'name' => 'refreshObject',
+            'objectName' => 'VirtualParameters'
+        ];
+
+        return $this->request($endpoint, 'POST', $data);
     }
 
     /**
@@ -936,6 +1010,14 @@ class GenieACS {
             // Device does not support DHCP - set to null
             $data['dhcp_server'] = null;
         }
+
+        // Admin Web Access Credentials
+        $data['admin_user'] = $getParam('VirtualParameters.superAdmin') ?? 'N/A';
+        $data['admin_password'] = $getParam('VirtualParameters.superPassword') ?? 'N/A';
+        $data['telecom_password'] = $getParam('InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password') ?? 'N/A';
+
+        // Tags
+        $data['tags'] = $device['_tags'] ?? [];
 
         return $data;
     }

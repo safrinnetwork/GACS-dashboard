@@ -613,6 +613,12 @@ table tbody tr:hover {
     100% { transform: rotate(360deg); }
 }
 
+/* Inline spin animation for icons */
+.spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
 /* Modal Styles */
 .modal-content {
     border-radius: 12px;

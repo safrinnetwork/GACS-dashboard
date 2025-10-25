@@ -172,10 +172,20 @@ include __DIR__ . '/views/layouts/header.php';
 <script>
 let deviceChart = null;
 let uplinkChart = null;
+let dashboardFetchInProgress = false;
+let uplinkFetchInProgress = false;
+let recentDevicesFetchInProgress = false;
 
 async function loadDashboardData() {
+    // Prevent concurrent requests
+    if (dashboardFetchInProgress) {
+        console.debug('[DASHBOARD] Stats fetch already in progress, skipping...');
+        return;
+    }
+
+    dashboardFetchInProgress = true;
     try {
-        const result = await fetchAPI('/api/dashboard-stats.php');
+        const result = await fetchAPI('/api/dashboard-stats.php', { timeout: 25000 });
 
         if (result && result.success) {
             const stats = result.stats;
@@ -191,12 +201,16 @@ async function loadDashboardData() {
             // Update chart
             updateChart(stats);
         } else {
-            showToast('Gagal memuat data dashboard', 'danger');
+            if (result && result.error !== 'timeout') {
+                showToast('Gagal memuat data dashboard', 'danger');
+            }
         }
     } catch (error) {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.error('Error loading dashboard:', error);
         }
+    } finally {
+        dashboardFetchInProgress = false;
     }
 }
 
@@ -241,18 +255,29 @@ function updateChart(stats) {
 }
 
 async function loadUplinkData() {
+    // Prevent concurrent requests
+    if (uplinkFetchInProgress) {
+        console.debug('[DASHBOARD] Uplink fetch already in progress, skipping...');
+        return;
+    }
+
+    uplinkFetchInProgress = true;
     try {
-        const result = await fetchAPI('/api/uplink-stats.php');
+        const result = await fetchAPI('/api/uplink-stats.php', { timeout: 25000 });
 
         if (result && result.success) {
             updateUplinkChart(result.data);
         } else {
-            showToast('Gagal memuat data uplink', 'danger');
+            if (result && result.error !== 'timeout') {
+                showToast('Gagal memuat data uplink', 'danger');
+            }
         }
     } catch (error) {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.error('Error loading uplink:', error);
         }
+    } finally {
+        uplinkFetchInProgress = false;
     }
 }
 
@@ -316,11 +341,18 @@ function extractIP(ipString) {
 }
 
 async function loadRecentDevices() {
+    // Prevent concurrent requests
+    if (recentDevicesFetchInProgress) {
+        console.debug('[DASHBOARD] Recent devices fetch already in progress, skipping...');
+        return;
+    }
+
     const container = document.getElementById('recent-devices');
     container.innerHTML = '<div class="spinner"></div>';
 
+    recentDevicesFetchInProgress = true;
     try {
-        const result = await fetchAPI('/api/recent-devices.php');
+        const result = await fetchAPI('/api/recent-devices.php', { timeout: 25000 });
 
         if (result && result.success) {
             const devices = result.devices;
@@ -454,13 +486,19 @@ async function loadRecentDevices() {
             html += '</tbody></table></div>';
             container.innerHTML = html;
         } else {
-            container.innerHTML = '<p class="text-center text-danger">Failed to load recent devices</p>';
+            if (result && result.error !== 'timeout') {
+                container.innerHTML = '<p class="text-center text-danger">Failed to load recent devices</p>';
+            } else {
+                container.innerHTML = '<p class="text-center text-warning">Request timeout - please refresh</p>';
+            }
         }
     } catch (error) {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.error('Error loading recent devices:', error);
         }
         container.innerHTML = '<p class="text-center text-danger">Error loading data</p>';
+    } finally {
+        recentDevicesFetchInProgress = false;
     }
 }
 
