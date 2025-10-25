@@ -1,8 +1,8 @@
 -- ============================================================================
 -- GACS Dashboard - Complete Database Schema
 -- ============================================================================
--- Version: 1.0.0-beta (Universal)
--- Generated: October 19, 2025
+-- Version: 1.0.1
+-- Updated: October 25, 2025
 -- Description: Unified database schema including all core and Telegram features
 --
 -- This file contains:
@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS `genieacs_credentials` (
   `port` int(11) DEFAULT 7557,
   `username` varchar(100) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
+  `role` varchar(50) DEFAULT NULL,
   `is_connected` tinyint(1) DEFAULT 0,
   `last_test` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
@@ -625,6 +626,10 @@ WHERE tu.is_active = 1;
 -- 8. Setup cron jobs (device-monitor.php, webhook-monitor.php, backup.sh)
 --
 -- Version History:
+-- v1.0.1 (2025-10-25) - GenieACS Role Detection Feature
+--   - Added: `role` VARCHAR(50) column to genieacs_credentials table
+--   - Purpose: Store GenieACS user role (admin/user) from role detection feature
+--
 -- v1.0.0-beta (2025-10-19) - Universal schema (no hardcoded database name)
 --   - Added: mac_vendor_cache table for MAC address vendor lookups
 --   - Updated: odc_config with server_id column for child ODC support
