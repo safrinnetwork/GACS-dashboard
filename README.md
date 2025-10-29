@@ -4,170 +4,78 @@
 
 ![Status](https://img.shields.io/badge/Status-Beta-yellow)
 ![Version](https://img.shields.io/badge/Version-1.1.0--beta-blue)
-![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)
+![PHP](https://img.shields.io/badge/PHP-8.3%2B-purple)
+![PHP Composer](https://img.shields.io/badge/PHP_Composer-2.8%2B-brown)
 ![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-orange)
 
-**GenieACS Network Monitoring Dashboard dengan Visualisasi Topologi PON**
+**GenieACS Network Monitoring Dashboard dengan Visualisasi Topologi**
 
-Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topologi jaringan GenieACS dengan real-time monitoring, editable polylines, dan integrasi Telegram.
+Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topologi jaringan GenieACS dengan real-time monitoring, editable polylines ( Garis ), dan terintegrasi Telegram.
 
 </div>
 
 ---
 
-## ➤ Telegram Support
+## ➤ Telegram Sharing Group Support
 
 - https://t.me/+QDz9bvRUZ95hZGY1
 
 ---
 
-## 🎯 About
-
-**GACS Dashboard** adalah platform monitoring jaringan fiber optik PON yang terintegrasi dengan GenieACS. Menyediakan visualisasi topologi interaktif, monitoring real-time, dan notifikasi Telegram untuk manajemen infrastruktur jaringan.
-
-**Key Highlights:**
-
-- 🗺️ Interactive network topology map dengan editable connection lines
-- 📊 Real-time device monitoring (ONU/ONT)
-- 🤖 Telegram bot dengan role-based access control
-- ⚡ PON power calculator untuk optical budget
-- 📱 Responsive design untuk mobile & desktop
-
-> **Note:** Project ini dalam tahap **beta testing**. Silakan laporkan bug yang ditemukan.
-
----
-
-## ✨ Fitur
-
-### Core Features
-
-- ✅ **Real-time Device Monitoring** - Status ONU/ONT secara real-time
-- ✅ **Interactive Network Topology Map** - Visualisasi PON hierarchy dengan drag & drop
-- ✅ **Editable Connection Lines** - Customize jalur koneksi dengan waypoints
-- ✅ **PON Power Calculator** - Hitung optical power budget otomatis
-- ✅ **GenieACS Integration** - Integrasi penuh dengan GenieACS TR-069 API
-- ✅ **MikroTik API Support** - Monitor status dari MikroTik router
-- ✅ **Telegram Bot** - Multi-user bot dengan 11 granular permissions
-
-### PON Topology Support
-
-- **Server** → **ISP** → **MikroTik** → **OLT** → **ODC** → **ODP** → **ONU/ONT**
-- Support splitter 1:2 hingga 1:64 + custom ratio (20:80, 30:70, 50:50)
-- GPS coordinates untuk setiap device
-- Auto power calculation melalui hierarchy
-
-### Telegram Bot Features ( BUG )
-
-- 🤖 **Interactive Menu** - Inline keyboard untuk semua fungsi
-- 🔐 **Role-Based Access** - 3 roles (Admin, Operator, Viewer) dengan 11 permissions
-- 📊 **Device Management** - View, search, filter, summon devices
-- 📶 **WiFi Configuration** - Edit SSID/Password via multi-step wizard
-- 🗺️ **GPS Location** - Share device location dengan Google Maps link
-- 📈 **Reports** - Daily/weekly automated reports dengan scheduling
-- 🔔 **Notifications** - Subscribe per-device untuk status alerts
-
----
-
 ## 🖥️ Requirements
+**Mandatorily Required**
 
-**Server:**
+- [GenieACS](https://github.com/safrinnetwork/GACS-Ubuntu-22.04) yang sudah terinstall, jika belum punya silahkan install dulu, bisa langsung ke [GACS-Ubuntu](https://github.com/safrinnetwork/GACS-Ubuntu-22.04) untuk panduan lengkap cara install.
+- MikroTik yang aktif port api
+- Telegram Bot (optional, untuk notifications dan preview singkat)
 
-- Web server: Apache 2.4+ (dengan mod_rewrite) atau Nginx 1.18+
-- PHP: 7.4+ (8.0+ recommended)
-- MySQL/MariaDB: 5.7+ / 10.3+
-- Composer
 
-**PHP Extensions:**
+**Server Requirements**
 
-```
-php-mysqli, php-json, php-curl, php-mbstring, php-xml
-```
+- Web server : `Apache 2.4+ atau Nginx 1.2+`
+- PHP : `8.3+`
+- MySQL/MariaDB : `5.7+ / 10.3+`
+- Composer : `2.8+`
+- PHP Extensions: php-mysqli, php-json, php-curl, php-mbstring, php-xml
 
-**External Services:**
+> **Note** : supaya lebih mudah install panel hosting manager saja seperti  **CloudPanel**, **Aapanel**, atau **CyberPanel**.
 
-- GenieACS instance (untuk device management)
-- MikroTik Router (optional, untuk network status)
-- Telegram Bot (optional, untuk notifications)
 
 ---
 
 ## 🚀 Quick Installation
 
-### Step 1: Upload & Extract
+### `Step 1` Upload & Extract
 
-```bash
-# Upload file ZIP ke hosting
-unzip gacs-dashboard.zip -d /var/www/html/gacs
-cd /var/www/html/gacs
-```
 
-### Step 2: Install Dependencies
+- Upload file ZIP GACS-dashboard-main.zip ke hosting
+- Unzip GACS-dashboard-main.zip
+- Copy semua file yang ada di folder GACS-dashboard-main ke root directory hosting
+- Edit file config/database.php sesuaikan dengan database hosting
+- Edit config/config.php
 
-```bash
-composer install --no-dev --optimize-autoloader
-```
+> **Note** : untuk folder root biasanya folder root hosting ada di **public_html**, **htdocs**, atau **httpdocs** tergantung dari panel hosting manager.
 
-### Step 3: Create Database
 
-```bash
-# Via MySQL command line
-mysql -u root -p -e "CREATE DATABASE gacs_production CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p gacs_production < database.sql
+### `Step 2` Init Task
 
-# Atau via phpMyAdmin:
-# 1. Create database: gacs_production
-# 2. Import: database.sql
-```
+1. Akses domain kamu nama `https://domain.com/init.php`
+2. Login ke init.php dengan user berikut
+    - username : `user1234`
+    - password : `mostech`
 
-### Step 4: Configure
+![Init Login](./preview/Init_Login.png)
 
-```bash
-# Copy template files
-cp config/database.php.example config/database.php
-cp config/config.php.example config/config.php
+3. Selesaikan perintah yang ada di init.php
 
-# Edit database credentials
-nano config/database.php
-```
+![Init Complete](./preview/Init_Complete.png)
 
-Update dengan credentials Anda:
+4. ⚠️ **HAPUS FILE INIT JIKA SUDAH SELESAI**
 
-```php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'your_username');
-define('DB_PASS', 'your_password');
-define('DB_NAME', 'gacs_production');
-```
+### `Step 3` Testing
 
-Edit app URL:
-
-```bash
-nano config/config.php
-```
-
-```php
-define('APP_URL', 'https://your-domain.com');
-```
-
-### Step 5: Set Permissions
-
-```bash
-# Set ownership (adjust user for your hosting)
-chown -R www-data:www-data /var/www/html/gacs
-
-# Set permissions
-find /var/www/html/gacs -type d -exec chmod 755 {} \;
-find /var/www/html/gacs -type f -exec chmod 644 {} \;
-
-# Secure sensitive files
-chmod 600 /var/www/html/gacs/config/database.php
-chmod 600 /var/www/html/gacs/config/config.php
-```
-
-### Step 6: Test Installation
-
-1. Buka browser: `https://your-domain.com`
-2. Login dengan kredensial default:
+1. Buka browser: `https://domain.com`
+2. Login dengan kredensial default
    - Username: `user1234`
    - Password: `mostech`
 3. ⚠️ **SEGERA GANTI PASSWORD DEFAULT!**
@@ -176,126 +84,38 @@ chmod 600 /var/www/html/gacs/config/config.php
 
 ## ⚙️ Configuration
 
-### 1. GenieACS Integration
+### 1. GenieACS Integration / Tab ACS Config
 
-1. Login → **Configuration** → **GenieACS** tab
-2. Enter: Host, Port (7557), Username, Password
-3. Click **Test Connection** → **Save**
+1. Host : Isi dengan GenieACS ip/domain
+2. Port : Isi dengan port api GenieACS (7557)
+3. Username : Isi dengan username GenieACS
+4. Password : Isi dengan password GenieACS
+5. Test Connection, jika berhasil lanjut save
 
-### 2. MikroTik API
+![ACS Config](./preview/genieacs_config.png)
 
-1. Configuration → **MikroTik** tab
-2. Enter: Host, Port (8728), Username, Password
-3. Test & Save
+### 2. MikroTik / Tab MikroTik Config
 
-### 3. Telegram Bot
+1. Host : Isi dengan MikroTik ip/domain
+2. Port : Isi dengan port api MikroTik (7557)
+3. Username : Isi dengan username MikroTik
+4. Password : Isi dengan password MikroTik
+5. Test Connection, jika berhasil lanjut save
 
-1. Configuration → **Telegram** tab
-2. Enter: Bot Token (dari @BotFather), Chat ID
-3. Test & Save
-4. Set webhook:
+![MikroTik Config](./preview/mikrotik_config.png)
+
+### 3. Telegram / Tab Bot Config
+
+1. Buat bot dulu di [@BotFather](https://t.me/BotFather)
+2. Bot Token : Isi bot token dari [@BotFather](https://t.me/BotFather)
+3. Chat ID : Isi chat id dari akun telegram kalian, untuk mendapatkan chat id bisa ke bot [@Chat I'd Info Bot](https://t.me/ChatidinfoBot)
+4. Set webhook 
 
 ```bash
 curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://your-domain.com/webhook/telegram.php"
 ```
 
-5. Create admin user:
-
-```sql
-INSERT INTO telegram_users (chat_id, username, first_name, role, is_active)
-VALUES ('YOUR_CHAT_ID', 'username', 'Your Name', 'admin', 1);
-```
-
----
-
-## 🤖 Telegram Bot Features ( BUG )
-
-### Main Menu Commands
-
-```
-/start, /menu     - Show main menu
-/help             - Command list
-/stats            - Dashboard statistics
-/list             - Browse all devices (10 per page)
-/status <id>      - Device details
-/search <keyword> - Search devices
-/summon <id>      - Force device connection request
-/subscriptions    - View your subscriptions
-```
-
-### Admin Commands
-
-```
-/whoami                   - View your role & permissions
-/users                    - List all users
-/user <chat_id>           - View user details
-/setrole <chat_id> <role> - Change user role (admin/operator/viewer)
-/activate <chat_id>       - Activate user
-/deactivate <chat_id>     - Deactivate user
-```
-
-### Report Commands
-
-```
-/report daily             - Generate daily report now
-/report weekly            - Generate weekly report now
-/schedule daily HH:MM     - Schedule daily reports
-/schedule weekly <day> HH:MM - Schedule weekly reports
-/schedule list            - View active schedules
-```
-
-### Role-Based Access
-
-- **👑 Admin** - Full access (11 permissions) - user management, WiFi edit
-- **⚙️ Operator** - Device management (8 permissions) - summon, subscribe, reports
-- **👁️ Viewer** - Read-only (4 permissions) - view devices, statistics
-
-**Auto-Registration:** New users auto-register as "viewer" on first interaction.
-
-### Interactive Features
-
-- 📊 **Device List** - Pagination (10/page) dengan Previous/Next buttons
-- 📶 **WiFi Edit** - Multi-step wizard (SSID → Password → Confirm)
-- 🗺️ **GPS Location** - View coordinates, Google Maps, Network Map links
-- 📍 **Location Sharing** - Send actual Telegram GPS pin
-- 🔔 **Notifications** - Subscribe per-device untuk status changes
-
----
-
-## 📅 Automated Tasks (Cron Jobs)
-
-### Required Cron Jobs
-
-```bash
-# Edit crontab
-crontab -e
-
-# Add these lines (adjust paths):
-# Device monitoring - every 5 minutes
-*/5 * * * * /usr/bin/php /path/to/gacs/cron/device-monitor.php >> /var/log/gacs-monitor.log 2>&1
-
-# Webhook monitoring - every 5 minutes
-*/5 * * * * /usr/bin/php /path/to/gacs/cron/webhook-monitor.php 2>&1 | logger -t webhook-monitor
-
-# Database backup - daily at 2 AM
-0 2 * * * /path/to/gacs/cron/backup.sh >> /var/log/gacs-backup.log 2>&1
-
-# Scheduled reports - every hour (check for pending reports)
-0 * * * * /usr/bin/php /path/to/gacs/cron/send-scheduled-reports.php >> /var/log/gacs-reports.log 2>&1
-```
-
-### Test Cron Jobs Manually
-
-```bash
-# Test device monitor
-php /path/to/gacs/cron/device-monitor.php
-
-# Test webhook monitor
-php /path/to/gacs/cron/webhook-monitor.php
-
-# Test backup
-bash /path/to/gacs/cron/backup.sh
-```
+![Telegram Config](./preview/telegram_config.png)
 
 ---
 
@@ -331,73 +151,6 @@ bash /path/to/gacs/cron/backup.sh
 
 ---
 
-#### Telegram Bot
-
-- Setup instructions
-- Main menu & commands
-- Interactive features (WiFi edit, GPS location)
-- Role-based permissions
-- Multi-step wizards
-- Report scheduling
-
-#### Cron Jobs
-
-- Device monitoring (status notifications)
-- Webhook monitoring (auto-reset)
-- Database backup (daily)
-- Scheduled reports
-- Log cleanup
-
-#### Architecture
-
-- Database schema (25 tables + 1 view)
-- Core libraries (GenieACS, MikroTik, PON Calculator, Telegram Bot)
-- Entry points & API endpoints
-- PON topology system
-- Map visualization
-- Security considerations
-
----
-
-## 📦 File Structure
-
-```
-gacs-dashboard/
-├── api/                    # API endpoints
-│   ├── map-*.php          # Map operations
-│   ├── get-devices.php    # Device data
-│   └── update-wifi-config.php
-├── assets/
-│   ├── css/               # Stylesheets
-│   └── js/                # JavaScript (Leaflet.Editable.js)
-├── config/                # Configuration
-│   ├── config.php         # App config
-│   └── database.php       # DB credentials
-├── cron/                  # Cron jobs
-│   ├── device-monitor.php
-│   ├── webhook-monitor.php
-│   └── backup.sh
-├── lib/                   # Core libraries
-│   ├── GenieACS.php
-│   ├── MikroTikAPI.php
-│   ├── PONCalculator.php
-│   ├── TelegramBot.php
-│   └── PermissionManager.php
-├── webhook/
-│   └── telegram.php       # Telegram webhook
-├── views/                 # View templates
-├── dashboard.php          # Main dashboard
-├── devices.php            # Devices page
-├── device-detail.php      # Device details
-├── map.php                # Network map
-├── configuration.php      # Settings
-├── database.sql           # Unified schema (25 tables)
-└── README.md              # This file
-```
-
----
-
-
 ## 🤝 Contributing
 
 Contributions are welcome! If you'd like to contribute:
@@ -425,6 +178,7 @@ If you encounter issues or have questions:
 - 📖 **Documentation:** See complete documentation files above
 - 🔍 **Troubleshooting:** Check troubleshooting section
 - 💬 **Community:** Join discussion di GitHub Discussions
+- ➤ **Telegram:** Join telegram sharing group
 
 ---
 
@@ -436,9 +190,9 @@ This project is licensed under the **MIT License** - see LICENSE file for detail
 
 ## 🙏 Credits
 
-**Developed by:** Mostech
+**Developed by** Mostech
 
-**Special Thanks:**
+**Special Thanks**
 
 - GenieACS community
 - Leaflet.js team
