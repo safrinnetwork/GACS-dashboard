@@ -16,6 +16,14 @@ Dashboard berbasis web yang powerful untuk memonitor dan memvisualisasikan topol
 
 ---
 
+## ⭐ Minta Bintang Om
+
+- Jiki birkiniin tiling tinggilin binting (⭐) im
+![Star](./preview/Star.png)
+
+---
+---
+
 ## ➤ Telegram Sharing Group Support
 
 - https://t.me/+QDz9bvRUZ95hZGY1
